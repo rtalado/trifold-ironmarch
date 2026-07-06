@@ -6,9 +6,11 @@
 
 const Run = {
   // ------------------------------------------------------------------
-  start() {
+  start(fac) {
+    fac = FACTIONS[fac] ? fac : 'vanguard';
     G.run = {
-      roster: STARTER_ROSTER.map(id => ({ id, up: false })),
+      fac,
+      roster: FACTIONS[fac].start.map(id => ({ id, up: false })),
       relics: [], scrap: 45,
       act: 0, floor: -1, pos: 0,
       map: null, seen: [],
@@ -176,6 +178,7 @@ const Run = {
     if (res.relic) { const rl = this.randomRelic(); if (rl) { r.relics.push(rl); out.push(`Gained: ${RELICS[rl].name}`); } }
     if (res.squad) {
       let id = res.squad;
+      if (id === 'basic') id = FACTIONS[r.fac || 'vanguard'].basic;
       if (id === 'uncommon' || id === 'rare' || id === 'common') {
         const pool = Meta.pool().filter(c => SQUADS[c].rar === id);
         id = pool.length ? pick(pool) : pick(Meta.pool());

@@ -13,13 +13,15 @@ let ENT_ID = 1;
 function newBattle(encId, run) {
   const enc = ENCOUNTERS[encId];
   const hooks = aggHooks(run.relics);
+  const fpk = (FACTIONS[run.fac] || FACTIONS.vanguard).battle;
+  if (fpk.structHpMult) hooks.structHpMult *= fpk.structHpMult;
   const seed = Math.floor(Math.random() * 1e9);
   const tmpl = pick(MAP_TEMPLATES);
   const feats = tmpl.feats.map(f => ({ t: f.t, x: f.x * ARENA.w, y: f.y * ARENA.h, r: f.r }));
 
   const b = {
-    enc, encId, run, hooks, seed, t: 0, result: null, over: false,
-    fac: enc.fac, feats,
+    enc, encId, run, hooks, fpk, seed, t: 0, result: null, over: false,
+    fac: enc.fac, feats, bounty: 0,
     rocks: feats.filter(f => f.t === 'rocks'),
     ents: [], fx: [], squads: [],
     shake: 0, phase: 'place',        // place | fight
@@ -30,8 +32,9 @@ function newBattle(encId, run) {
     reserveCdT: 0,
   };
 
+  const pfac = FACTIONS[run.fac] ? run.fac : 'vanguard';
   b.hq = spawnEnt(b, 'player', null, ARENA.coreP.x, ARENA.coreP.y, {
-    core: true, name: 'Field HQ', fac: 'vanguard', w: 40,
+    core: true, name: FACTIONS[pfac].hqName, fac: pfac, w: 40,
     hp: Math.round(ECON.coreHPBase), maxhp: Math.round(ECON.coreHPBase),
   });
   b.core = spawnEnt(b, 'enemy', null, ARENA.coreE.x, ARENA.coreE.y, {
@@ -259,6 +262,11 @@ function killEnt(b, e, source) {
   if (e.side === 'enemy' && (e.boss || e.w >= 18) && b.hooks.eliteBounty) {
     b.run.scrap += b.hooks.eliteBounty;
     b.fx.push({ kind: 'scrapPop', x: e.x, y: e.y, amt: b.hooks.eliteBounty, ttl: 1 });
+  }
+  // Syndicate kill bounty: every enemy point destroyed accrues scrap (paid on victory)
+  if (e.side === 'enemy' && b.fpk.killBounty && e.unitId) {
+    const u = UNITS[e.unitId];
+    b.bounty += (u.pts / u.models) * b.fpk.killBounty;
   }
   if (e.deathSpawn) {
     for (let i = 0; i < e.deathSpawn.n; i++)

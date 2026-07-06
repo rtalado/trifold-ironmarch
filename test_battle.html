@@ -29,6 +29,7 @@
 <div id="overlay" class="screen hidden"></div>
 
 <script src="js/defs.js"></script>
+<script src="js/lore.js"></script>
 <script src="js/core.js"></script>
 <script src="js/sprites.js"></script>
 <script src="js/sim.js"></script>
@@ -57,15 +58,24 @@ window.addEventListener('DOMContentLoaded', () => {
   const mode = q.get('mode') || 'place';
   const enc = q.get('enc') || 'm_tyrant';
 
+  const pfac = q.get('pfac') || 'vanguard';
+  const testRosters = {
+    vanguard:  ['marine','marine','rocketeer','sniper','medic','siegetank','goliath','turret','pillbox','artillery'],
+    syndicate: ['enforcer','enforcer','gunhand','marauder','arbalest','sawbones','dragoon','ironhide','juggernaut','demolisher'],
+    warden:    ['sentinel','sentinel','wardenguard','pikeman','marshal','halberdier','ironclad','bombard','ballista','redoubt'],
+  };
   G.run = {
-    roster: ['marine','marine','rocketeer','sniper','medic','siegetank','goliath','turret','pillbox','artillery']
-      .map(id => ({ id, up: false })),
+    fac: pfac,
+    roster: testRosters[pfac].map(id => ({ id, up: false })),
     relics: ['r_veterans'], scrap: 60, act: q.get('act') ? +q.get('act') : 0,
     floor: 0, pos: 0, map: null, seen: [],
   };
   G.run.roster[5].up = true;   // one starred squad for the visuals
 
   if (mode === 'armory') { UI.showArmory(); document.title = errs.length ? 'ERRORS' : 'ARMORY OK'; return; }
+  if (mode === 'facselect') { UI.showFactionSelect(); document.title = errs.length ? 'ERRORS' : 'FACSELECT OK'; return; }
+  if (mode === 'codex') { UI.showCodex(); document.title = errs.length ? 'ERRORS' : 'CODEX OK'; return; }
+  if (mode === 'codexfac') { UI.showCodexFaction(q.get('fac') || 'syndicate'); document.title = errs.length ? 'ERRORS' : 'CODEXFAC OK'; return; }
   if (mode === 'settings') { UI.showSettings(() => {}); document.title = errs.length ? 'ERRORS' : 'SETTINGS OK'; return; }
   if (mode === 'export') { UI.showSaveData('export'); document.title = errs.length ? 'ERRORS' : 'EXPORT OK'; return; }
   if (mode === 'import') { UI.showSaveData('import'); document.title = errs.length ? 'ERRORS' : 'IMPORT OK'; return; }

@@ -37,6 +37,6 @@ window.addEventListener('DOMContentLoaded', () => {
   UI.showTitle();
   requestAnimationFrame(frame);
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js').then(r => r.update()).catch(() => {});
   }
 });

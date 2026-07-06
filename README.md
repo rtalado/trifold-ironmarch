@@ -1,10 +1,20 @@
 # TRIFOLD: IRONMARCH
 
 A single-player **roguelike tactics autobattler** set in the Trifold universe —
-Mechabellum-style battles inside a Slay-the-Spire-style run. You command the
-Vanguard's last expedition column: muster a roster of squads, **place them on a
-top-down battlefield before each fight**, then watch the battle resolve. Squads
-that get wiped are **gone forever**.
+Mechabellum-style battles inside a Slay-the-Spire-style run. Muster a roster of
+squads, **place them on a top-down battlefield before each fight**, then watch
+the battle resolve. Squads that get wiped are **gone forever**.
+
+**Three playable factions**, each with its own roster, sprites and economy:
+- **The Vanguard** — combined arms, the widest arsenal (the baseline).
+- **Gilded Syndicate** — mercenary economics: kill bounties pay scrap on
+  victory, wiped squads refund part of their price (severance).
+- **Warden Covenant** — turtle and tech: emplacements get +25% HP and pay
+  masonry rent after every battle they survive.
+
+The **Codex** on the title screen carries the war's lore — every faction and
+every unit (see `js/lore.js`; the faction designs follow the guides in
+`../trifold-rts/guides/`).
 
 Plain HTML5 canvas + vanilla JS, no build step, no dependencies, no image files —
 every sprite and battlefield is painted in code at load time.

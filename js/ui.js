@@ -157,9 +157,10 @@ const UI = {
     }
 
     const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
-    on('btnStart', () => { this.clearSave(); Run.start(); });
+    on('btnStart', () => this.showFactionSelect());
     on('btnResume', () => this.resumeRun());
     on('btnArmory', () => this.showArmory());
+    on('btnCodex', () => this.showCodex());
     on('btnSettings', () => this.showSettings(() => this.showTitle()));
     on('btnRosterMap', () => this.showRoster(G.run.roster, { title: 'The Column' }));
     on('btnMenuMap', () => this.showMenu());
@@ -322,6 +323,7 @@ const UI = {
         <button id="stWipe" class="ghostBtn">Reset all progress</button>
         <button id="stBack">Back</button>
       </div>
+      <p class="dim small" style="margin-top:14px">Client fetched: ${document.lastModified}</p>
     `);
     const syncToggles = () => {
       p.querySelector('#stShake').textContent = s.shake ? 'ON' : 'OFF';
@@ -440,30 +442,38 @@ const UI = {
   showArmory() {
     G.screen = 'armory';
     this.backFn = () => this.showTitle();
-    const have = Meta.pool();
+    const total = Object.keys(SQUADS).length;
+    const haveAll = Object.keys(FACTIONS).reduce((n, f) => n + Meta.pool(f).length, 0);
     const p = this.overlay(`
-      <h2>THE ARMORY <span class="dim">(${have.length}/${Object.keys(SQUADS).length} requisitioned)</span></h2>
-      <p class="dim small">Squads your column can muster. Locked requisitions are earned by marching.</p>
-      <div class="cardRow wrap" id="amCards"></div>
+      <h2>THE ARMORY <span class="dim">(${haveAll}/${total} requisitioned)</span></h2>
+      <p class="dim small">Squads each faction can muster. Locked requisitions are earned by marching — any faction's marches count.</p>
+      <div id="amSections"></div>
       <button id="amBack" class="ghostBtn">Back</button>
     `);
-    const row = p.querySelector('#amCards');
     const needOf = id => {
       for (const u of META_UNLOCKS) if (u.squads.includes(id)) {
         return u.need.wins ? `${u.label} — ${u.need.wins} victor${u.need.wins > 1 ? 'ies' : 'y'}` : `${u.label} — ${u.need.runs} march${u.need.runs > 1 ? 'es' : ''}`;
       }
       return '';
     };
-    for (const id of Object.keys(SQUADS)) {
-      const el = this.squadEl(id, { small: true });
-      if (!have.includes(id)) {
-        el.classList.add('locked');
-        const lock = document.createElement('div');
-        lock.className = 'lockNote';
-        lock.textContent = needOf(id);
-        el.appendChild(lock);
+    const sections = p.querySelector('#amSections');
+    for (const [facId, f] of Object.entries(FACTIONS)) {
+      const have = Meta.pool(facId);
+      sections.insertAdjacentHTML('beforeend', `<h3 class="amFac">${f.name.toUpperCase()}</h3>`);
+      const row = document.createElement('div');
+      row.className = 'cardRow wrap';
+      for (const id of Object.keys(SQUADS).filter(s => UNITS[s].fac === facId)) {
+        const el = this.squadEl(id, { small: true });
+        if (!have.includes(id)) {
+          el.classList.add('locked');
+          const lock = document.createElement('div');
+          lock.className = 'lockNote';
+          lock.textContent = needOf(id);
+          el.appendChild(lock);
+        }
+        row.appendChild(el);
       }
-      row.appendChild(el);
+      sections.appendChild(row);
     }
     p.querySelector('#amBack').onclick = () => this.showTitle();
   },
@@ -473,9 +483,101 @@ const UI = {
   resumeRun() {
     try {
       const r = JSON.parse(localStorage.getItem('ironmarch_run_v2'));
-      if (r && r.map && r.roster) { G.run = r; G.screen = 'map'; this.showMap(); return; }
+      if (r && r.map && r.roster) {
+        if (!r.fac || !FACTIONS[r.fac]) r.fac = 'vanguard'; // pre-faction saves
+        G.run = r; G.screen = 'map'; this.showMap(); return;
+      }
     } catch (e) {}
-    Run.start();
+    this.showFactionSelect();
+  },
+
+  // =================================================================
+  // FACTION SELECT — who marches?
+  // =================================================================
+  showFactionSelect() {
+    G.screen = 'facselect';
+    this.backFn = () => this.showTitle();
+    const p = this.overlay(`
+      <h2>WHO MARCHES EAST?</h2>
+      <p class="dim small">Each faction musters its own squads and fights the same war its own way.</p>
+      <div id="facRow" class="facRow"></div>
+      <button id="fsBack" class="ghostBtn">Back</button>
+    `);
+    const row = p.querySelector('#facRow');
+    for (const [id, f] of Object.entries(FACTIONS)) {
+      const el = document.createElement('div');
+      el.className = 'facCard';
+      const art = document.createElement('canvas');
+      art.className = 'facArt';
+      art.width = 240; art.height = 120;
+      const g = art.getContext('2d');
+      g.fillStyle = '#10131a'; g.fillRect(0, 0, 240, 120);
+      const core = Sprites.core(id);
+      g.drawImage(core.canvas, 120 - 52, 60 - 52, 104, 104);
+      el.appendChild(art);
+      el.insertAdjacentHTML('beforeend', `
+        <div class="facName">${f.name}</div>
+        <div class="facMotto">“${f.motto}”</div>
+        <ul class="facPerks">${f.perks.map(x => `<li>${x}</li>`).join('')}</ul>
+        <div class="facStart dim small">Musters: ${f.start.map(u => UNITS[u].name).join(', ')}</div>
+      `);
+      el.onclick = () => { this.clearSave(); Run.start(id); };
+      row.appendChild(el);
+    }
+    p.querySelector('#fsBack').onclick = () => this.showTitle();
+  },
+
+  // =================================================================
+  // CODEX — the war, the factions, and every unit's story
+  // =================================================================
+  showCodex() {
+    G.screen = 'codex';
+    this.backFn = () => this.showTitle();
+    const p = this.overlay(`
+      <h2>CODEX</h2>
+      <p class="dim small">${LORE.war.kicker}</p>
+      ${LORE.war.text.map(t => `<p class="loreText">${t}</p>`).join('')}
+      <div class="btnCol" id="cxList" style="margin-top:16px"></div>
+      <button id="cxBack" class="ghostBtn" style="margin-top:12px">Back</button>
+    `);
+    const list = p.querySelector('#cxList');
+    const enemyNames = { myriad:'Myriad Swarm', choir:'Ashen Choir', pact:'Obsidian Pact' };
+    for (const id of Object.keys(LORE.factions)) {
+      const b = document.createElement('button');
+      b.textContent = FACTIONS[id] ? FACTIONS[id].name : enemyNames[id];
+      b.onclick = () => this.showCodexFaction(id);
+      list.appendChild(b);
+    }
+    p.querySelector('#cxBack').onclick = () => this.showTitle();
+  },
+
+  showCodexFaction(facId) {
+    G.screen = 'codex';
+    this.backFn = () => this.showCodex();
+    const f = LORE.factions[facId];
+    const fname = FACTIONS[facId] ? FACTIONS[facId].name : { myriad:'Myriad Swarm', choir:'Ashen Choir', pact:'Obsidian Pact' }[facId];
+    const units = Object.keys(UNITS).filter(id => UNITS[id].fac === facId);
+    const p = this.overlay(`
+      <h2>${fname.toUpperCase()}</h2>
+      <p class="dim small">${f.kicker}</p>
+      ${f.text.map(t => `<p class="loreText">${t}</p>`).join('')}
+      <div class="loreUnits" id="cxUnits"></div>
+      <button id="cxBack" class="ghostBtn" style="margin-top:14px">Back to codex</button>
+    `);
+    const wrap = p.querySelector('#cxUnits');
+    for (const id of units) {
+      const row = document.createElement('div');
+      row.className = 'loreUnit';
+      const art = document.createElement('canvas');
+      art.width = 88; art.height = 70;
+      art.getContext('2d').drawImage(Sprites.chipArt(id, 44, 35), 0, 0, 88, 70);
+      row.appendChild(art);
+      row.insertAdjacentHTML('beforeend',
+        `<div><div class="loreUnitName">${UNITS[id].name}</div>
+         <div class="loreUnitText">${LORE.units[id] || ''}</div></div>`);
+      wrap.appendChild(row);
+    }
+    p.querySelector('#cxBack').onclick = () => this.showCodex();
   },
 
   // =================================================================
@@ -649,6 +751,8 @@ const UI = {
   // =================================================================
   enterBattle(b) {
     this.show('battle');
+    const hqEl = document.getElementById('hqName');
+    if (hqEl) hqEl.textContent = (FACTIONS[G.run.fac] || FACTIONS.vanguard).hqName.toUpperCase();
     Render.prepare(b);
     document.getElementById('encName').textContent =
       (b.enc.boss ? '♛ ' : b.enc.elite ? '☠ ' : '') + coreName(b.fac) + ' — ' + ACTS[G.run.act].name.split('—')[1].trim();
@@ -857,7 +961,7 @@ const UI = {
       <p class="dim">The fires are low and the pickets are set. One night's grace — use it well.</p>
       <div class="btnCol">
         <button id="rsDrill">★ Drill a squad (upgrade it)</button>
-        <button id="rsRecruit">⛨ Muster local volunteers (gain a Marine Squad)</button>
+        <button id="rsRecruit">⛨ Muster local volunteers (gain ${UNITS[FACTIONS[G.run.fac || 'vanguard'].basic].name})</button>
         <button id="rsScavenge">⚙ Scavenge the area (+25 scrap)</button>
       </div>
     `);
@@ -867,7 +971,7 @@ const UI = {
       onCancel: () => this.showRest(),
     });
     p.querySelector('#rsRecruit').onclick = () => {
-      Run.addSquad('marine'); G.screen = 'map'; this.showMap();
+      Run.addSquad(FACTIONS[G.run.fac || 'vanguard'].basic); G.screen = 'map'; this.showMap();
     };
     p.querySelector('#rsScavenge').onclick = () => {
       G.run.scrap += 25; G.screen = 'map'; this.showMap();

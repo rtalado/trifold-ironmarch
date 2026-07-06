@@ -63,17 +63,23 @@ button:disabled { opacity: 0.4; cursor: default; }
 }
 #titleCanvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .titleInner { text-align: center; position: relative; z-index: 1; padding: 0 16px; }
-.titleKicker { letter-spacing: 0.55em; color: var(--dim); font-size: 13px; }
+.titleKicker { letter-spacing: clamp(0.24em, 1.4vw, 0.55em); color: var(--dim); font-size: clamp(11px, 3vw, 13px); }
 .titleName {
-  font-size: 92px; font-weight: normal; letter-spacing: 0.18em;
+  font-size: clamp(36px, 10.5vw, 92px); font-weight: normal;
+  letter-spacing: clamp(0.03em, 0.8vw, 0.18em);
   color: #e4dcc8;
   text-shadow: 0 0 34px #d8b45a33, 0 3px 0 #0006, 0 0 2px #d8b45a55;
   margin: 6px 0 4px;
+  white-space: nowrap;
 }
-.titleSub { color: #8b93a8; line-height: 1.7; margin-bottom: 34px; }
+.titleSub { color: #8b93a8; line-height: 1.7; margin-bottom: clamp(16px, 4vh, 34px); font-size: clamp(12px, 3.4vw, 16px); }
+.titleSub br { display: none; }
+@media (min-width: 700px) { .titleSub br { display: block; } }
 .titleBtns { align-items: center; }
-.titleBtns .btnRow { margin-top: 6px; }
-#titleStats { margin-top: 26px; letter-spacing: 0.08em; font-size: 13px; }
+.titleBtns > button { width: min(320px, 80vw); }
+.titleBtns .btnRow { margin-top: 6px; flex-wrap: wrap; }
+#titleStats { margin-top: clamp(12px, 3vh, 26px); letter-spacing: 0.08em; font-size: clamp(11px, 3vw, 13px); padding: 0 10px; }
+.bigBtn { font-size: clamp(15px, 4vw, 18px); padding: clamp(10px, 2.6vw, 14px) 20px; letter-spacing: clamp(0.12em, 1vw, 0.22em); }
 
 /* ======================= TOP BARS ======================= */
 .topBar {
@@ -248,6 +254,37 @@ button.armed { border-color: var(--blood); color: var(--blood); }
 .setRow button { padding: 5px 14px; font-size: 12px; min-width: 56px; }
 .setOpts { display: flex; gap: 6px; }
 .setRow button.on { border-color: var(--gold); color: var(--gold); }
+/* faction select */
+.facRow { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin: 16px 0 18px; }
+.facCard {
+  width: min(260px, 86vw); text-align: left; cursor: pointer;
+  background: linear-gradient(#20242f, #171a22);
+  border: 1px solid var(--line); border-radius: 6px; padding: 10px;
+  transition: transform .12s, border-color .12s, box-shadow .12s;
+}
+@media (hover: hover) {
+  .facCard:hover { transform: translateY(-5px); border-color: var(--gold); box-shadow: 0 8px 24px #000c; }
+}
+.facArt { width: 100%; height: 90px; object-fit: cover; border-radius: 3px; display: block; }
+.facName { font-size: 16px; letter-spacing: 0.1em; color: #e4dcc8; margin-top: 8px; }
+.facMotto { font-size: 12px; color: var(--gold); font-style: italic; margin: 2px 0 6px; }
+.facPerks { margin: 0 0 8px 16px; padding: 0; font-size: 11.5px; line-height: 1.5; color: #98a0b4; }
+.facStart { line-height: 1.4; }
+
+/* codex */
+.loreText { text-align: left; color: #aab2c4; line-height: 1.65; font-size: 13.5px; margin-bottom: 12px; }
+.loreUnits { margin-top: 18px; text-align: left; display: flex; flex-direction: column; gap: 10px; }
+.loreUnit {
+  display: flex; gap: 12px; align-items: flex-start;
+  border-top: 1px solid #23262f; padding-top: 10px;
+}
+.loreUnit canvas { width: 88px; height: 70px; flex-shrink: 0; border-radius: 4px; }
+.loreUnitName { color: #e4dcc8; font-size: 13px; letter-spacing: 0.06em; margin-bottom: 3px; }
+.loreUnitText { color: #98a0b4; font-size: 12px; line-height: 1.55; }
+
+/* armory sections */
+.amFac { letter-spacing: 0.18em; font-weight: normal; color: var(--gold); font-size: 14px; margin: 20px 0 2px; }
+
 .saveBox {
   width: 100%; min-height: 110px; margin: 10px 0 2px;
   background: #0e1015; color: var(--text); border: 1px solid var(--line);
@@ -281,8 +318,7 @@ button.armed { border-color: var(--blood); color: var(--blood); }
   .card .cardArt { height: 62px; }
   .card.small { width: 108px; }
   .card.small .cardArt { height: 54px; }
-  .titleName { font-size: 54px; }
-  .bigBtn { font-size: 15px; padding: 10px 30px; }
+  .titleName { font-size: clamp(34px, 9vh, 54px); }
   body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
 }
 
@@ -301,6 +337,4 @@ button.armed { border-color: var(--blood); color: var(--blood); }
   .chip { width: 104px; }
   .chipArt { height: 38px; }
   .panel { padding: 20px 16px; }
-  .titleName { font-size: 54px; letter-spacing: 0.12em; }
-  .titleSub { font-size: 13px; }
 }

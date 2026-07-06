@@ -24,9 +24,10 @@ const Meta = {
     try { localStorage.setItem(this.SKEY, JSON.stringify(this.settings)); } catch (e) {}
   },
 
-  // squad ids available in rewards & shops
-  pool() {
-    return BASE_POOL.concat(this.data.unlocked);
+  // squad ids available in rewards & shops for the given (or current run's) faction
+  pool(fac) {
+    fac = fac || (G.run && G.run.fac) || 'vanguard';
+    return basePool(fac).concat(this.data.unlocked.filter(id => UNITS[id].fac === fac));
   },
 
   recordRunEnd(won) {
@@ -39,7 +40,7 @@ const Meta = {
       const met = (!u.need.runs || d.runs >= u.need.runs) && (!u.need.wins || d.wins >= u.need.wins);
       if (met) {
         for (const s of u.squads) {
-          if (!d.unlocked.includes(s) && !BASE_POOL.includes(s)) {
+          if (!d.unlocked.includes(s)) {
             d.unlocked.push(s);
             news.push({ squad: s, label: u.label });
           }

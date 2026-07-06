@@ -1,12 +1,11 @@
 // ============================================================================
 // TRIFOLD: IRONMARCH — service worker
-// Precache on install, then stale-while-revalidate: every load is served from
-// cache instantly (offline included) while a background refetch picks up
-// whatever was pushed to the repo. New versions apply on the next launch.
+// Network-first with cache fallback: every online launch gets the latest
+// deploy immediately; offline launches replay the last cached version.
 // ============================================================================
 'use strict';
 
-const CACHE = 'ironmarch-v1';
+const CACHE = 'ironmarch-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -19,6 +18,7 @@ const ASSETS = [
   './js/render.js',
   './js/run.js',
   './js/meta.js',
+  './js/lore.js',
   './js/ui.js',
   './js/main.js',
   './manifest.webmanifest',
@@ -28,7 +28,11 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(c => Promise.allSettled(ASSETS.map(a => c.add(a))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', e => {
@@ -39,16 +43,25 @@ self.addEventListener('activate', e => {
   );
 });
 
+const fetchFresh = (req, ms) => {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), ms);
+  return fetch(req, { signal: ctl.signal, cache: 'no-cache' }).finally(() => clearTimeout(t));
+};
+
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
-  e.respondWith(caches.open(CACHE).then(async c => {
-    const cached = await c.match(req, { ignoreSearch: true });
-    const refetch = fetch(req)
-      .then(res => { if (res && res.ok) c.put(req, res.clone()); return res; })
-      .catch(() => null);
-    if (cached) { e.waitUntil(refetch); return cached; }
-    const fresh = await refetch;
-    return fresh || Response.error();
-  }));
+  e.respondWith((async () => {
+    const c = await caches.open(CACHE);
+    try {
+      const res = await fetchFresh(req, 4000);
+      if (res && res.ok) c.put(req, res.clone());
+      return res;
+    } catch (err) {
+      const cached = await c.match(req, { ignoreSearch: true });
+      if (cached) return cached;
+      throw err;
+    }
+  })());
 });

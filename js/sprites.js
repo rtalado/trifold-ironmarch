@@ -6,6 +6,8 @@
 
 const PAL = {
   vanguard: { base:'#242c3a', mid:'#3d4f66', hi:'#7396bb', rim:'#d8ecff', glow:'#ffd27a', accent:'#a87c2a', dark:'#141922' },
+  syndicate:{ base:'#2e2517', mid:'#4d3d22', hi:'#b08c3c', rim:'#ffe9b0', glow:'#ffcf5e', accent:'#6e2a2a', dark:'#191307' },
+  warden:   { base:'#272d33', mid:'#3e4a54', hi:'#8098aa', rim:'#e2eef6', glow:'#6fd8c0', accent:'#c0a480', dark:'#15191d' },
   myriad:   { base:'#1d2614', mid:'#33441f', hi:'#71a038', rim:'#d6ff9a', glow:'#aef060', accent:'#5d3a6b', dark:'#0e130a' },
   choir:    { base:'#262630', mid:'#3f3f52', hi:'#9191b0', rim:'#eeeeff', glow:'#8fd8e8', accent:'#cfc8b0', dark:'#14141c' },
   pact:     { base:'#2a181b', mid:'#48232a', hi:'#a34440', rim:'#ffb09a', glow:'#ff4a34', accent:'#d8c4a8', dark:'#180c0f' },
@@ -308,6 +310,78 @@ const RECIPES = {
   hospital:   { r:15, f:(g,p)=>tdStructure(g,p,{r:15,kind:'tent'}) },
   radar:      { r:14, f:(g,p)=>tdStructure(g,p,{r:14,kind:'dish'}) },
 
+  // syndicate — gilded mercs: brass trim, coin glows
+  enforcer:   { r:9,  f:(g,p)=>tdInfantry(g,p,{r:9, weapon:'rifle', pack:true}) },
+  gunhand:    { r:9,  f:(g,p)=>{ tdInfantry(g,p,{r:8.5, weapon:'rifle'});
+                 g.strokeStyle=p.hi+'88'; g.lineWidth=1.4;   // duster tails
+                 g.beginPath(); g.moveTo(-8,-3); g.lineTo(-14,-5); g.moveTo(-8,3); g.lineTo(-14,5); g.stroke(); } },
+  marauder:   { r:10, f:(g,p)=>tdInfantry(g,p,{r:10, weapon:'launcher', pack:true}) },
+  arbalest:   { r:9,  f:(g,p)=>{ tdInfantry(g,p,{r:9, weapon:'long', cloak:true});
+                 glowDot(g,p.glow,23,-2.2,1.6); } },        // beam tip
+  sawbones:   { r:9,  f:(g,p)=>tdInfantry(g,p,{r:9, weapon:'none', pack:true, medic:true}) },
+  dragoon:    { r:11, f:(g,p)=>tdFlyer(g,p,{r:11, rotor:true}) },
+  ironhide:   { r:15, f:(g,p)=>{ tdVehicle(g,p,{L:38,W:28,barrel:9});
+                 g.strokeStyle=p.hi+'aa'; g.lineWidth=2;    // riveted prow plate
+                 g.beginPath(); g.moveTo(14,-9); g.lineTo(19,0); g.lineTo(14,9); g.stroke(); } },
+  juggernaut: { r:16, f:(g,p)=>tdVehicle(g,p,{L:44,W:30,barrel:26,big:true}) },
+  demolisher: { r:15, f:(g,p)=>tdVehicle(g,p,{L:42,W:24,barrel:42,big:true,turretBack:true,spade:true}) },
+  warlord:    { r:20, f:(g,p)=>{ tdVehicle(g,p,{L:66,W:42,barrel:46,big:true,twin:true,turretBack:true});
+                 glowDot(g,p.glow,-24,0,4.5); glowDot(g,p.glow,10,0,3); } },
+  watchpost:  { r:11, f:(g,p)=>tdStructure(g,p,{r:11,kind:'turret'}) },
+  gunbastion: { r:15, f:(g,p)=>{ tdStructure(g,p,{r:15,kind:'cannon'});
+                 rimStroke(g,p.hi,2,gg=>gg.arc(0,0,17,-2.9,-0.3)); } },
+  goldvault:  { r:14, f:(g,p)=>{ tdStructure(g,p,{r:14,kind:'bunker'});
+                 glowDot(g,p.glow,0,0,4);                    // strongbox shine
+                 g.strokeStyle=p.glow+'66'; g.lineWidth=1.4;
+                 g.beginPath(); g.arc(0,0,6.5,0,7); g.stroke(); } },
+
+  // warden — grey stone, teal wardlight
+  sentinel:   { r:9,  f:(g,p)=>{ tdInfantry(g,p,{r:9, weapon:'none', pack:true});
+                 blob(g,p.mid,7,0,4.5,6,0);                  // tower shield held forward
+                 rimStroke(g,p.rim,2,gg=>{gg.moveTo(9,-6); gg.lineTo(9,6);}); } },
+  wardenguard:{ r:10, f:(g,p)=>{ tdInfantry(g,p,{r:10, weapon:'rifle', pack:true});
+                 blob(g,p.mid,5,3,3.5,4.5,0); } },           // side pavise
+  pikeman:    { r:9,  f:(g,p)=>tdInfantry(g,p,{r:9, weapon:'long'}) },
+  marshal:    { r:11, f:(g,p)=>{ tdInfantry(g,p,{r:10, weapon:'none', pack:true});
+                 g.strokeStyle=p.accent; g.lineWidth=1.8;    // banner pole + pennant
+                 g.beginPath(); g.moveTo(-4,-8); g.lineTo(-4,-20); g.stroke();
+                 softShape(g,p.glow,0,gg=>{gg.moveTo(-4,-20); gg.lineTo(6,-17); gg.lineTo(-4,-14); gg.closePath();}); } },
+  halberdier: { r:11, f:(g,p)=>{ tdInfantry(g,p,{r:11, weapon:'long', pack:true});
+                 blob(g,p.hi,25,-2.8,3,1.8,0.5); } },        // axe head on the pole
+  bombard:    { r:14, f:(g,p)=>tdVehicle(g,p,{L:36,W:22,barrel:30,big:true,spade:true}) },
+  ironclad:   { r:16, f:(g,p)=>{ tdVehicle(g,p,{L:42,W:32,barrel:0});
+                 blob(g,p.mid,12,0,6,10,0);                  // ram prow
+                 rimStroke(g,p.rim,2,gg=>{gg.moveTo(16,-9); gg.lineTo(20,0); gg.lineTo(16,9);}); } },
+  castellan:  { r:19, f:(g,p)=>{ tdWalker(g,p,{r:19}); glowDot(g,p.glow,0,0,4); } },
+  trebuchet:  { r:15, f:(g,p)=>{ tdVehicle(g,p,{L:40,W:22,barrel:0,spade:true});
+                 g.strokeStyle=p.dark; g.lineWidth=3.4; g.lineCap='round';
+                 g.beginPath(); g.moveTo(-14,0); g.lineTo(24,-7); g.stroke();  // throwing arm
+                 blob(g,p.dark,-14,0,5.5,5.5,0);             // counterweight
+                 blob(g,p.hi+'66',24,-7,2.5,2.5,0); } },
+  rampart:    { r:14, f:(g,p)=>{ softShape(g,p.dark,0,gg=>gg.roundRect(-6,-16,13,32,3));
+                 softShape(g,lgrad(g,-5,-16,6,16,p.mid,p.base),0,gg=>gg.roundRect(-5,-15,10,30,2));
+                 g.strokeStyle=p.dark; g.lineWidth=1.2;      // mortar seams
+                 for(let i=0;i<4;i++){ g.beginPath(); g.moveTo(-5,-9+i*6); g.lineTo(5,-9+i*6); g.stroke(); }
+                 rimStroke(g,p.rim,2,gg=>{gg.moveTo(-4,-14); gg.lineTo(4,-14);}); } },
+  ballista:   { r:13, f:(g,p)=>{ tdStructure(g,p,{r:12,kind:'turret'});
+                 g.strokeStyle=p.accent; g.lineWidth=2;      // crossbow limbs
+                 g.beginPath(); g.moveTo(8,-8); g.lineTo(15,-3); g.moveTo(8,8); g.lineTo(15,3); g.stroke(); } },
+  cauldron:   { r:13, f:(g,p)=>{ blob(g,p.dark,0,0,12,12,0);
+                 blob(g,lgrad(g,-9,-9,9,9,p.mid,p.base),0,0,9.5,9.5,0);
+                 blob(g,p.accent+'aa',0,0,6,6,0);            // simmering oil
+                 glowDot(g,'#ff9a3a',0,0,3.4);
+                 rimStroke(g,p.rim,2,gg=>gg.arc(0,0,10,-2.8,-0.6)); } },
+  redoubt:    { r:15, f:(g,p)=>{ tdStructure(g,p,{r:15,kind:'bunker'});
+                 g.strokeStyle=p.base; g.lineWidth=3; g.lineCap='round';
+                 g.beginPath(); g.moveTo(0,0); g.lineTo(22,0); g.stroke();
+                 blob(g,p.mid,0,0,5,5,0); } },
+  bulwark:    { r:22, f:(g,p)=>{ tdStructure(g,p,{r:22,kind:'bunker'});
+                 for(const s of [-1,1]){ g.strokeStyle=p.base; g.lineWidth=2.6; g.lineCap='round';
+                   g.beginPath(); g.moveTo(4,s*9); g.lineTo(22,s*12); g.stroke(); }
+                 g.strokeStyle=p.dark; g.lineWidth=4;
+                 g.beginPath(); g.moveTo(0,0); g.lineTo(30,0); g.stroke();
+                 glowDot(g,p.glow,0,0,5); } },
+
   // myriad
   swarmling:  { r:8,  f:(g,p)=>tdBeast(g,p,{r:8, legs:3, maw:true}) },
   spitter:    { r:10, f:(g,p)=>tdBeast(g,p,{r:10, legs:3, spikes:3}) },
@@ -369,6 +443,39 @@ function paintCore(fac) {
     glowDot(g, p.glow, -R * 0.3, R * 0.25, 4);
     glowDot(g, p.glow, R * 0.2, R * 0.35, 3);
     rimStroke(g, p.rim, 3, gg => { gg.moveTo(-R * 0.66, -R * 0.56); gg.lineTo(R * 0.66, -R * 0.56); });
+  } else if (fac === 'syndicate') {
+    // the Haven: gilded counting-hall with strongroom + coin glow
+    softShape(g, p.dark, 0, gg => gg.roundRect(-R * 0.78, -R * 0.66, R * 1.56, R * 1.32, 10));
+    softShape(g, lgrad(g, -R, -R, R, R, p.mid, p.base), 0, gg => gg.roundRect(-R * 0.66, -R * 0.54, R * 1.32, R * 1.08, 8));
+    // vault ring
+    blob(g, p.dark, R * 0.22, 0, R * 0.3, R * 0.3, 0);
+    blob(g, lgrad(g, 0, -R * 0.2, R * 0.4, R * 0.2, p.mid, p.base), R * 0.22, 0, R * 0.22, R * 0.22, 0);
+    g.strokeStyle = p.hi; g.lineWidth = 2;
+    g.beginPath(); g.arc(R * 0.22, 0, R * 0.26, 0, 7); g.stroke();
+    glowDot(g, p.glow, R * 0.22, 0, 6);
+    // coin stacks
+    for (let i = 0; i < 3; i++) blob(g, p.hi, -R * 0.4 + i * R * 0.14, R * 0.3, 4, 3, 0);
+    blob(g, p.hi + '66', -R * 0.35, -R * 0.3, R * 0.14, R * 0.08, 0);
+    rimStroke(g, p.rim, 3, gg => { gg.moveTo(-R * 0.64, -R * 0.52); gg.lineTo(R * 0.64, -R * 0.52); });
+  } else if (fac === 'warden') {
+    // Bastion Keep: square curtain wall, corner towers, central keep
+    softShape(g, p.dark, 0, gg => gg.roundRect(-R * 0.74, -R * 0.7, R * 1.48, R * 1.4, 6));
+    softShape(g, lgrad(g, -R, -R, R, R, p.mid, p.base), 0, gg => gg.roundRect(-R * 0.62, -R * 0.58, R * 1.24, R * 1.16, 4));
+    for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
+      blob(g, p.dark, sx * R * 0.6, sy * R * 0.56, R * 0.17, R * 0.17, 0);
+      blob(g, p.mid, sx * R * 0.6, sy * R * 0.56, R * 0.12, R * 0.12, 0);
+    }
+    // central keep
+    blob(g, p.dark, 0, 0, R * 0.32, R * 0.32, 0);
+    softShape(g, lgrad(g, -R * 0.2, -R * 0.2, R * 0.2, R * 0.2, p.mid, p.base), 0, gg => gg.roundRect(-R * 0.24, -R * 0.24, R * 0.48, R * 0.48, 4));
+    glowDot(g, p.glow, 0, 0, 5);
+    // battlements
+    g.fillStyle = p.mid;
+    for (let i = 0; i < 6; i++) {
+      blob(g, p.mid, -R * 0.5 + i * R * 0.2, -R * 0.58, 3.5, 3, 0);
+      blob(g, p.mid, -R * 0.5 + i * R * 0.2, R * 0.58, 3.5, 3, 0);
+    }
+    rimStroke(g, p.rim, 3, gg => { gg.moveTo(-R * 0.6, -R * 0.56); gg.lineTo(R * 0.6, -R * 0.56); });
   } else if (fac === 'myriad') {
     for (let i = 4; i > 0; i--)
       blob(g, i % 2 ? p.mid : p.dark, 0, 0, R * 0.2 * i, R * 0.18 * i, 0.2);

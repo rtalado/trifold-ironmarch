@@ -109,11 +109,26 @@ function finishBattle(b) {
   // permadeath: strike wiped squads from the roster (indices descending)
   const lost = [...new Set(b.wiped)].sort((a, z) => z - a);
   const lostNames = lost.map(i => squadName(run.roster[i]));
+  // Syndicate severance: wiped squads refund part of their price (before the splice)
+  let severance = 0;
+  if (b.fpk.severance) {
+    for (const i of lost) {
+      const entry = run.roster[i];
+      severance += Math.round(squadPrice(entry.id) * b.fpk.severance * (entry.up ? 1.3 : 1));
+    }
+  }
   for (const i of lost) run.roster.splice(i, 1);
 
   if (b.result === 'win') {
+    // masonry rent + unit-level rents from emplacements still standing
+    let rent = 0;
+    for (const e of b.ents) {
+      if (e.dead || e.side !== 'player' || !e.struct) continue;
+      rent += (b.fpk.structRent || 0) + (UNITS[e.unitId] && UNITS[e.unitId].rent || 0);
+    }
     const scrap = ECON.scrapWinBase + b.enc.tier * 9 + (b.enc.elite ? 18 : 0) + (b.enc.boss ? 35 : 0)
-                + Math.floor(rand(0, 8)) + b.hooks.scrapAdd;
+                + Math.floor(rand(0, 8)) + b.hooks.scrapAdd
+                + Math.round(b.bounty || 0) + severance + rent;
     run.scrap += scrap;
     Run.afterVictory(b, scrap, lostNames);
   } else {

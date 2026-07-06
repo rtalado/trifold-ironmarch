@@ -53,6 +53,37 @@ const UNITS = {
   hospital:   { name:'Field Hospital', fac:'vanguard', models:1, pts:6,  hp:220, dmg:0,  rng:0, rof:0, spd:0, w:15, struct:true, heal:5, healRng:180 },
   radar:      { name:'Radar Station',  fac:'vanguard', models:1, pts:6,  hp:180, dmg:0,  rng:0, rof:0, spd:0, w:14, struct:true, aura:{rng:220, rngBoost:0.2} },
 
+  // ======================= GILDED SYNDICATE (player) =======================
+  enforcer:   { name:'Enforcers',      fac:'syndicate', models:4, pts:4,  hp:50,  dmg:7,  rng:145, rof:1.15,spd:56, w:9,  air:true },
+  gunhand:    { name:'Gun Hands',      fac:'syndicate', models:3, pts:4,  hp:38,  dmg:6,  rng:110, rof:1.6, spd:125,w:9,  air:true },
+  marauder:   { name:'Marauders',      fac:'syndicate', models:3, pts:5,  hp:70,  dmg:16, rng:90,  rof:0.8, spd:60, w:10, splash:30 },
+  arbalest:   { name:'Arbalests',      fac:'syndicate', models:2, pts:5,  hp:32,  dmg:36, rng:310, rof:0.35,spd:46, w:9,  air:true },
+  sawbones:   { name:'Sawbones',       fac:'syndicate', models:2, pts:4,  hp:44,  dmg:0,  rng:0,   rof:0,   spd:52, w:9,  heal:6, healRng:125 },
+  dragoon:    { name:'Dragoons',       fac:'syndicate', models:2, pts:7,  hp:95,  dmg:9,  rng:150, rof:1.8, spd:105,w:11, fly:true, air:true },
+  ironhide:   { name:'Ironhide',       fac:'syndicate', models:1, pts:7,  hp:340, dmg:12, rng:40,  rof:1.3, spd:52, w:15 },
+  juggernaut: { name:'Juggernaut',     fac:'syndicate', models:1, pts:8,  hp:320, dmg:30, rng:180, rof:0.55,spd:48, w:16, splash:36 },
+  demolisher: { name:'Demolisher',     fac:'syndicate', models:1, pts:9,  hp:120, dmg:46, rng:390, rof:0.28,spd:32, w:15, splash:50, minRng:150 },
+  warlord:    { name:'The Warlord',    fac:'syndicate', models:1, pts:16, hp:850, dmg:40, rng:260, rof:0.7, spd:34, w:20, air:true, splash:44 },
+  watchpost:  { name:'Watchpost',      fac:'syndicate', models:1, pts:4,  hp:150, dmg:8,  rng:220, rof:1.5, spd:0, w:11, air:true, struct:true },
+  gunbastion: { name:'Gun Bastion',    fac:'syndicate', models:1, pts:7,  hp:520, dmg:20, rng:230, rof:0.9, spd:0, w:15, splash:30, struct:true },
+  goldvault:  { name:'Bullion Vault',  fac:'syndicate', models:1, pts:5,  hp:260, dmg:0,  rng:0,   rof:0,   spd:0, w:14, struct:true, rent:10 },
+
+  // ======================= WARDEN COVENANT (player) =======================
+  sentinel:   { name:'Sentinels',      fac:'warden', models:4, pts:4,  hp:86,  dmg:7,  rng:26,  rof:1.3, spd:52, w:9 },
+  wardenguard:{ name:'Warden Guard',   fac:'warden', models:3, pts:5,  hp:80,  dmg:11, rng:150, rof:1.0, spd:42, w:10, air:true },
+  pikeman:    { name:'Pikemen',        fac:'warden', models:3, pts:5,  hp:60,  dmg:20, rng:30,  rof:0.8, spd:46, w:9 },
+  marshal:    { name:'Marshal',        fac:'warden', models:1, pts:5,  hp:120, dmg:0,  rng:0,   rof:0,   spd:44, w:11, heal:7, healRng:150 },
+  halberdier: { name:'Halberdiers',    fac:'warden', models:2, pts:6,  hp:105, dmg:24, rng:32,  rof:0.9, spd:50, w:11 },
+  bombard:    { name:'Bombard',        fac:'warden', models:1, pts:7,  hp:150, dmg:34, rng:300, rof:0.35,spd:30, w:14, splash:42, minRng:110 },
+  ironclad:   { name:'Ironclad',       fac:'warden', models:1, pts:8,  hp:420, dmg:22, rng:38,  rof:0.9, spd:40, w:16 },
+  castellan:  { name:'Castellan',      fac:'warden', models:1, pts:12, hp:700, dmg:34, rng:220, rof:0.6, spd:26, w:19, air:true, splash:30 },
+  trebuchet:  { name:'Trebuchet',      fac:'warden', models:1, pts:11, hp:90,  dmg:60, rng:460, rof:0.22,spd:22, w:15, splash:60, minRng:200 },
+  rampart:    { name:'Rampart',        fac:'warden', models:1, pts:3,  hp:520, dmg:0,  rng:0,   rof:0,   spd:0, w:14, struct:true, rent:2 },
+  ballista:   { name:'Ballista Tower', fac:'warden', models:1, pts:5,  hp:220, dmg:30, rng:320, rof:0.5, spd:0, w:13, air:true, struct:true },
+  cauldron:   { name:'Oil Cauldron',   fac:'warden', models:1, pts:5,  hp:300, dmg:16, rng:120, rof:1.1, spd:0, w:13, splash:34, struct:true },
+  redoubt:    { name:'Redoubt',        fac:'warden', models:1, pts:8,  hp:380, dmg:24, rng:300, rof:0.6, spd:0, w:15, splash:36, struct:true },
+  bulwark:    { name:'The Bulwark',    fac:'warden', models:1, pts:18, hp:1500,dmg:36, rng:280, rof:1.2, spd:0, w:22, air:true, splash:26, struct:true },
+
   // ======================= MYRIAD SWARM (act 1) =======================
   swarmling:  { name:'Swarmlings',     fac:'myriad', models:5, pts:4,  hp:30,  dmg:5,  rng:22, rof:1.8, spd:92, w:8 },
   spitter:    { name:'Spitters',       fac:'myriad', models:3, pts:5,  hp:55,  dmg:10, rng:160,rof:0.9, spd:58, w:10, air:true },
@@ -89,6 +120,7 @@ const FRENZY = { dmgMult:1.35, spdMult:1.35, dur:6, rng:140 };
 
 // Squad recruitment metadata (player-side only).
 const SQUADS = {
+  // vanguard
   marine:    { rar:'common' }, rocketeer:{ rar:'common' }, sniper:{ rar:'common' },
   medic:     { rar:'common' }, hellhound:{ rar:'common' }, turret:{ rar:'common' },
   outrider:  { rar:'uncommon' }, mortar:{ rar:'uncommon' }, apc:{ rar:'uncommon' },
@@ -96,10 +128,57 @@ const SQUADS = {
   siegetank: { rar:'uncommon' }, gunship:{ rar:'uncommon' },
   goliath:   { rar:'rare' }, bomber:{ rar:'rare' }, artillery:{ rar:'rare' },
   cannon:    { rar:'rare' }, landship:{ rar:'rare' }, leviathan:{ rar:'rare' }, ratte:{ rar:'rare' },
+  // syndicate
+  enforcer:  { rar:'common' }, gunhand:{ rar:'common' }, marauder:{ rar:'common' },
+  arbalest:  { rar:'common' }, sawbones:{ rar:'common' }, watchpost:{ rar:'common' },
+  dragoon:   { rar:'uncommon' }, ironhide:{ rar:'uncommon' }, juggernaut:{ rar:'uncommon' },
+  goldvault: { rar:'uncommon' },
+  demolisher:{ rar:'rare' }, gunbastion:{ rar:'rare' }, warlord:{ rar:'rare' },
+  // warden
+  sentinel:  { rar:'common' }, wardenguard:{ rar:'common' }, pikeman:{ rar:'common' },
+  marshal:   { rar:'common' }, rampart:{ rar:'common' }, ballista:{ rar:'common' },
+  halberdier:{ rar:'uncommon' }, bombard:{ rar:'uncommon' }, ironclad:{ rar:'uncommon' },
+  cauldron:  { rar:'uncommon' },
+  redoubt:   { rar:'rare' }, castellan:{ rar:'rare' }, trebuchet:{ rar:'rare' }, bulwark:{ rar:'rare' },
 };
 
-// Starting roster.
-const STARTER_ROSTER = ['marine', 'marine', 'rocketeer', 'medic', 'turret'];
+// ---------------------------------------------------------------------------
+// Playable factions. `battle` hooks are applied by the sim/run layer:
+//   killBounty  — scrap per enemy point destroyed (paid on victory)
+//   severance   — fraction of a wiped squad's price refunded as scrap
+//   structHpMult— emplacement HP multiplier
+//   structRent  — scrap per surviving emplacement after a victory
+// Unit-level `rent` pays out per surviving emplacement regardless of faction.
+// ---------------------------------------------------------------------------
+const FACTIONS = {
+  vanguard: {
+    name:'The Vanguard', motto:'Hold the line. Bring them home.',
+    blurb:'The last professional army of the west — combined arms, deep reserves, and the widest arsenal in the war.',
+    perks:['The broadest roster: armour, air, artillery and emplacements', 'Balanced squads that reward combined arms'],
+    start:['marine','marine','rocketeer','medic','turret'],
+    basic:'marine', hqName:'Field HQ',
+    battle:{},
+  },
+  syndicate: {
+    name:'Gilded Syndicate', motto:'Gold breeds gold.',
+    blurb:'A mercantile cartel that wages war with money: fast mercenaries, kill bounties, and severance insurance that makes trading armies profitable.',
+    perks:['Kill bounty: enemy squads destroyed pay scrap after a victory', 'Severance: wiped squads refund part of their price', 'Fast, cheap mercs — fight constantly, re-hire freely'],
+    start:['enforcer','enforcer','marauder','sawbones','watchpost'],
+    basic:'enforcer', hqName:'The Haven',
+    battle:{ killBounty:0.5, severance:0.4 },
+  },
+  warden: {
+    name:'Warden Covenant', motto:'The wall pays for itself.',
+    blurb:'A walled brotherhood that turtles and techs: armoured foot, brutal siege, and emplacements so sturdy they turn a profit.',
+    perks:['Emplacements have +25% HP', 'Masonry rent: every surviving emplacement pays scrap after victory', 'Tough, slow squads and the longest-ranged siege in the war'],
+    start:['sentinel','sentinel','wardenguard','marshal','ballista'],
+    basic:'sentinel', hqName:'Bastion Keep',
+    battle:{ structHpMult:1.25, structRent:2 },
+  },
+};
+
+// Legacy alias (old saves): default starting roster.
+const STARTER_ROSTER = FACTIONS.vanguard.start;
 
 // Squad shop price ≈ pts × 9, tweaked by rarity.
 function squadPrice(unitId) {
@@ -230,7 +309,7 @@ const EVENTS = [
     text:'A shattered Vanguard column lies across the road — a battle lost weeks ago. Their supplies are intact. Some of their soldiers still breathe.',
     choices:[
       { label:'Strip the supplies', result:{scrap:35}, note:'+35 scrap' },
-      { label:'Rally the survivors', result:{squad:'marine'}, note:'Gain a Marine Squad' },
+      { label:'Rally the survivors', result:{squad:'basic'}, note:'Gain a basic squad' },
       { label:'Take their battle plans', result:{squad:'uncommon'}, note:'Gain an uncommon squad' },
     ]},
   { id:'obelisk', title:'The Silent Obelisk',
@@ -243,7 +322,7 @@ const EVENTS = [
   { id:'deserters', title:'Deserters',
     text:'Four men in Vanguard colours sit around a cold fire. They ran at the Creeplands. They ask to run with you instead.',
     choices:[
-      { label:'Take them in', result:{squad:'marine', upgraded:true}, note:'Gain an upgraded Marine Squad' },
+      { label:'Take them in', result:{squad:'basic', upgraded:true}, note:'Gain an upgraded basic squad' },
       { label:'Take their gear, send them home', result:{scrap:28}, note:'+28 scrap' },
     ]},
   { id:'cache', title:'Munitions Cache',
@@ -276,7 +355,15 @@ const META_UNLOCKS = [
   { need:{runs:3},  squads:['bomber'],    label:'Air Wing' },
   { need:{wins:2},  squads:['leviathan'], label:'Titan Works' },
   { need:{wins:3},  squads:['ratte'],     label:'The Impossible Gun' },
+  { need:{runs:2},  squads:['gunbastion'],label:'Bastion Contract' },
+  { need:{wins:1},  squads:['warlord'],   label:'The War Exchange' },
+  { need:{runs:2},  squads:['trebuchet'], label:'Grand Arsenal' },
+  { need:{wins:2},  squads:['bulwark'],   label:'The Bulwark Writ' },
 ];
 
-const BASE_POOL = Object.keys(SQUADS).filter(id =>
-  !['cannon','landship','bomber','leviathan','ratte'].includes(id));
+const UNLOCK_IDS = META_UNLOCKS.flatMap(u => u.squads);
+// Squads available from the start, per faction.
+function basePool(fac) {
+  return Object.keys(SQUADS).filter(id => UNITS[id].fac === fac && !UNLOCK_IDS.includes(id));
+}
+const BASE_POOL = basePool('vanguard'); // legacy alias
