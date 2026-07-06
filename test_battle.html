@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>ironmarch dev harness</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="title" class="screen hidden"><button id="btnStart"></button><button id="btnResume"></button><p id="titleStats"></p></div>
+<div id="map" class="screen hidden">
+  <div class="topBar"><div><div id="mapActName" class="actName"></div><div id="mapBlurb" class="dim small"></div></div>
+  <div class="topStats"><span id="barScrap" class="stat gold"></span><span id="barRoster" class="stat"></span><span id="barRelics"></span><button id="btnRosterMap">THE COLUMN</button></div></div>
+  <canvas id="mapCanvas"></canvas>
+</div>
+<div id="battle" class="screen">
+  <div class="battleTop">
+    <div class="hpBlock"><div class="hpLabel">FIELD HQ <span id="hqNum"></span></div><div class="hpTrack"><div id="hqFill" class="hpFill blue"></div></div></div>
+    <div id="encName" class="encName"></div>
+    <div class="hpBlock right"><div class="hpLabel"><span id="coreNum"></span> ENEMY CORE</div><div class="hpTrack"><div id="coreFill" class="hpFill red"></div></div></div>
+    <div class="battleCtl">
+      <button id="btnFight" class="fightBtn">⚔ SOUND THE ADVANCE</button>
+      <div id="speedBox" class="speedBox hidden"><button id="spd0">❚❚</button><button id="spd1" class="on">1×</button><button id="spd2">2×</button></div>
+      <div id="reserveBox" class="hidden"><div class="hpLabel">RESERVE DROPS <span id="reserveNum"></span></div><div class="reserveTrack"><div id="reserveFill"></div></div></div>
+    </div>
+  </div>
+  <div class="canvasWrap"><canvas id="battleCanvas"></canvas><div id="phaseBanner"></div><div id="hintBanner" class="hidden"></div></div>
+  <div id="tray"></div>
+</div>
+<div id="overlay" class="screen hidden"></div>
+
+<script src="js/defs.js"></script>
+<script src="js/core.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/sim.js"></script>
+<script src="js/combat.js"></script>
+<script src="js/render.js"></script>
+<script src="js/run.js"></script>
+<script src="js/meta.js"></script>
+<script src="js/ui.js"></script>
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+  const errs = [];
+  window.onerror = m => errs.push(m);
+  Meta.load(); Render.init(); UI.init();
+
+  const q = new URLSearchParams(location.search);
+  const mode = q.get('mode') || 'place';
+  const enc = q.get('enc') || 'm_tyrant';
+
+  G.run = {
+    roster: ['marine','marine','rocketeer','sniper','medic','siegetank','goliath','turret','pillbox','artillery']
+      .map(id => ({ id, up: false })),
+    relics: ['r_veterans'], scrap: 60, act: q.get('act') ? +q.get('act') : 0,
+    floor: 0, pos: 0, map: null, seen: [],
+  };
+  G.run.roster[5].up = true;   // one starred squad for the visuals
+
+  if (mode === 'map') {
+    Run.start();
+    G.run.floor = 0; G.run.pos = 0; G.run.map[0][0].done = true;
+    UI.showMap();
+    document.title = errs.length ? 'ERRORS: ' + errs.join('|') : 'MAP OK';
+    return;
+  }
+
+  startBattle(enc);
+  const b = G.battle;
+  // scripted placement
+  const spots = [[3,5],[3,9],[5,7],[6,11],[4,13],[7,8],[8,5],[2,7]];
+  let si = 0;
+  for (let i = 0; i < (mode === 'place' ? 6 : 8); i++) {
+    b.selected = i;
+    let guard = 0;
+    while (!b.deployed[i] && guard++ < 40) {
+      const s = spots[si % spots.length]; si++;
+      fieldClick(b, s[0] * 40, s[1] * 40);
+      if (!b.deployed[i]) fieldClick(b, 80 + Math.random() * 300, 60 + Math.random() * 620);
+    }
+  }
+  if (mode === 'place') {
+    // leave one squad armed with a ghost under the cursor
+    b.selected = 6;
+    Render.mouse = { wx: 320, wy: 300, over: true };
+    UI.refreshTray(b);
+    Render.draw(b);
+  } else {
+    beginFight(b);
+    const T = +(q.get('t') || 14);
+    for (let i = 0; i < T / 0.033; i++) { battleTick(0.033); if (!G.battle) break; }
+    if (G.battle) { UI.refreshTray(G.battle); Render.draw(G.battle); }
+  }
+  document.title = errs.length ? 'ERRORS: ' + errs.join('|') : 'RENDER OK';
+});
+</script>
+</body>
+</html>

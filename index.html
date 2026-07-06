@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trifold: Ironmarch</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ======================= TITLE ======================= -->
+<div id="title" class="screen">
+  <div class="titleInner">
+    <div class="titleKicker">A TRIFOLD TALE</div>
+    <h1 class="titleName">IRONMARCH</h1>
+    <p class="titleSub">The Vanguard's last column marches east — through the creep, the ash, and the blood.<br>
+    Muster the squads. Place them well. Bring them home.</p>
+    <div class="btnCol titleBtns">
+      <button id="btnStart" class="bigBtn">BEGIN THE MARCH</button>
+      <button id="btnResume" class="bigBtn ghostBtn hidden">RESUME THE MARCH</button>
+    </div>
+    <p id="titleStats" class="dim"></p>
+  </div>
+</div>
+
+<!-- ======================= MAP ======================= -->
+<div id="map" class="screen hidden">
+  <div class="topBar">
+    <div>
+      <div id="mapActName" class="actName"></div>
+      <div id="mapBlurb" class="dim small"></div>
+    </div>
+    <div class="topStats">
+      <span id="barScrap" class="stat gold"></span>
+      <span id="barRoster" class="stat"></span>
+      <span id="barRelics"></span>
+      <button id="btnRosterMap">THE COLUMN</button>
+    </div>
+  </div>
+  <canvas id="mapCanvas"></canvas>
+</div>
+
+<!-- ======================= BATTLE ======================= -->
+<div id="battle" class="screen hidden">
+  <div class="battleTop">
+    <div class="hpBlock">
+      <div class="hpLabel">FIELD HQ <span id="hqNum"></span></div>
+      <div class="hpTrack"><div id="hqFill" class="hpFill blue"></div></div>
+    </div>
+    <div id="encName" class="encName"></div>
+    <div class="hpBlock right">
+      <div class="hpLabel"><span id="coreNum"></span> ENEMY CORE</div>
+      <div class="hpTrack"><div id="coreFill" class="hpFill red"></div></div>
+    </div>
+    <div class="battleCtl">
+      <button id="btnFight" class="fightBtn">⚔ SOUND THE ADVANCE</button>
+      <div id="speedBox" class="speedBox hidden">
+        <button id="spd0">❚❚</button><button id="spd1" class="on">1×</button><button id="spd2">2×</button>
+      </div>
+      <div id="reserveBox" class="hidden">
+        <div class="hpLabel">RESERVE DROPS <span id="reserveNum"></span></div>
+        <div class="reserveTrack"><div id="reserveFill"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="canvasWrap">
+    <canvas id="battleCanvas"></canvas>
+    <div id="phaseBanner"></div>
+    <div id="hintBanner" class="hidden"></div>
+  </div>
+
+  <div id="tray"></div>
+</div>
+
+<!-- ======================= OVERLAY ======================= -->
+<div id="overlay" class="screen hidden"></div>
+
+<script src="js/defs.js"></script>
+<script src="js/core.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/sim.js"></script>
+<script src="js/combat.js"></script>
+<script src="js/render.js"></script>
+<script src="js/run.js"></script>
+<script src="js/meta.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
