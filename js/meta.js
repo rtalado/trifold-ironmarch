@@ -5,15 +5,23 @@
 
 const Meta = {
   KEY: 'ironmarch_meta_v2',
+  SKEY: 'ironmarch_settings_v1',
   data: null,
+  settings: null,
   lastUnlocks: [],
 
   load() {
     try { this.data = JSON.parse(localStorage.getItem(this.KEY)) || null; } catch (e) { this.data = null; }
     if (!this.data) this.data = { runs: 0, wins: 0, bestAct: 0, unlocked: [] };
+    let s = null;
+    try { s = JSON.parse(localStorage.getItem(this.SKEY)); } catch (e) {}
+    this.settings = Object.assign({ shake: true, haptics: true, holdMs: 450 }, s || {});
   },
   save() {
     try { localStorage.setItem(this.KEY, JSON.stringify(this.data)); } catch (e) {}
+  },
+  saveSettings() {
+    try { localStorage.setItem(this.SKEY, JSON.stringify(this.settings)); } catch (e) {}
   },
 
   // squad ids available in rewards & shops

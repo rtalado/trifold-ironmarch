@@ -1,27 +1,101 @@
 // ============================================================================
 // TRIFOLD: IRONMARCH — top-down battle renderer
-// Logical resolution ARENA.w × ARENA.h, scaled by CSS.
+// Canvas backing store at device resolution; a camera (pan + zoom) maps
+// world coords (ARENA.w × ARENA.h) onto it.
 // ============================================================================
 'use strict';
 
 const Render = {
-  cv: null, g: null, back: null,
+  cv: null, g: null, back: null, dpr: 1,
   mouse: { wx: -999, wy: -999, over: false },
+  cam: { x: ARENA.w / 2, y: ARENA.h / 2, z: 1 }, // z=1 → whole field fits
+  ZMAX: 4,
 
   init() {
     this.cv = document.getElementById('battleCanvas');
-    this.cv.width = ARENA.w; this.cv.height = ARENA.h;
     this.g = this.cv.getContext('2d');
+    this.resize();
+    window.addEventListener('resize', () => this.resize());
+  },
+
+  resize() {
+    const r = this.cv.getBoundingClientRect();
+    if (!r.width) return;
+    this.dpr = window.devicePixelRatio || 1;
+    this.cv.width = Math.round(r.width * this.dpr);
+    this.cv.height = Math.round(r.height * this.dpr);
+    this.clampCam();
+  },
+
+  // world → canvas transform (device px): scale s, offset (ox, oy)
+  xform() {
+    const fit = Math.min(this.cv.width / ARENA.w, this.cv.height / ARENA.h);
+    const s = fit * this.cam.z;
+    return { s, ox: this.cv.width / 2 - this.cam.x * s, oy: this.cv.height / 2 - this.cam.y * s };
+  },
+
+  toWorld(clientX, clientY) {
+    const r = this.cv.getBoundingClientRect();
+    const k = r.width ? this.cv.width / r.width : 1;
+    const { s, ox, oy } = this.xform();
+    return {
+      wx: ((clientX - r.left) * k - ox) / s,
+      wy: ((clientY - r.top) * k - oy) / s,
+    };
+  },
+
+  clampCam() {
+    const { s } = this.xform();
+    const vw = this.cv.width / (2 * s), vh = this.cv.height / (2 * s);
+    const M = 30; // let the view breathe a little past the field edge
+    this.cam.x = vw * 2 >= ARENA.w + M * 2 ? ARENA.w / 2 : clamp(this.cam.x, vw - M, ARENA.w - vw + M);
+    this.cam.y = vh * 2 >= ARENA.h + M * 2 ? ARENA.h / 2 : clamp(this.cam.y, vh - M, ARENA.h - vh + M);
+  },
+
+  panBy(dxCss, dyCss) {
+    const r = this.cv.getBoundingClientRect();
+    const k = r.width ? this.cv.width / r.width : 1;
+    const { s } = this.xform();
+    this.cam.x -= dxCss * k / s;
+    this.cam.y -= dyCss * k / s;
+    this.clampCam();
+  },
+
+  zoomAt(clientX, clientY, factor) {
+    const before = this.toWorld(clientX, clientY);
+    this.cam.z = clamp(this.cam.z * factor, 1, this.ZMAX);
+    const after = this.toWorld(clientX, clientY);
+    this.cam.x += before.wx - after.wx;
+    this.cam.y += before.wy - after.wy;
+    this.clampCam();
   },
 
   prepare(b) {
     this.back = paintField(b.fac, b.seed, b.feats);
+    this.resize();
+    if (this.cv.height > this.cv.width) {
+      // portrait: open zoomed onto the deployment zone; pan east to scout
+      const fit = Math.min(this.cv.width / ARENA.w, this.cv.height / ARENA.h);
+      this.cam.z = clamp((this.cv.height / ARENA.h) / fit * 0.95, 1, 2.6);
+      this.cam.x = ARENA.deployW * 0.65;
+      this.cam.y = ARENA.h / 2;
+    } else {
+      this.cam.z = 1;
+      this.cam.x = ARENA.w / 2;
+      this.cam.y = ARENA.h / 2;
+    }
+    this.clampCam();
   },
 
   draw(b) {
     const g = this.g, W = ARENA.w, H = ARENA.h, t = b.t;
+    const { s, ox, oy } = this.xform();
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.fillStyle = '#07080b';
+    g.fillRect(0, 0, this.cv.width, this.cv.height);
+    g.setTransform(s, 0, 0, s, ox, oy);
     g.save();
-    if (b.shake > 0.01) g.translate(rand(-1, 1) * b.shake * 7, rand(-1, 1) * b.shake * 5);
+    if (b.shake > 0.01 && Meta.settings.shake) g.translate(rand(-1, 1) * b.shake * 7, rand(-1, 1) * b.shake * 5);
     g.drawImage(this.back, 0, 0);
 
     const placing = b.phase === 'place' || (b.phase === 'fight' && b.selected != null);
@@ -77,6 +151,18 @@ const Render = {
     // ---- fx ----
     for (const f of b.fx) this.drawFx(g, b, f, t);
     g.restore();
+
+    // ---- screen-space warnings (pinned regardless of camera) ----
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    for (const f of b.fx) {
+      if (f.kind !== 'waveWarn') continue;
+      const k = clamp(f.ttl / 2.2, 0, 1);
+      g.fillStyle = `rgba(200,74,58,${Math.min(1, k) * (0.5 + 0.5 * Math.sin(t * 8))})`;
+      g.font = `${Math.round(15 * this.dpr)}px serif`;
+      g.textAlign = 'center';
+      g.fillText('⟶  ENEMY REINFORCEMENTS FROM THE EAST  ⟵', this.cv.width / 2, 40 * this.dpr);
+      g.textAlign = 'left';
+    }
   },
 
   // ---------------------------------------------------------------
@@ -216,14 +302,7 @@ const Render = {
         g.textAlign = 'left';
         break;
       }
-      case 'waveWarn': {
-        const k = clamp(f.ttl / 2.2, 0, 1);
-        g.fillStyle = `rgba(200,74,58,${Math.min(1, k) * (0.5 + 0.5 * Math.sin(t * 8))})`;
-        g.font = '20px serif'; g.textAlign = 'center';
-        g.fillText('⟶  ENEMY REINFORCEMENTS FROM THE EAST  ⟵', ARENA.w / 2, 40);
-        g.textAlign = 'left';
-        break;
-      }
+      case 'waveWarn': break; // drawn in the screen-space pass
     }
   },
 };

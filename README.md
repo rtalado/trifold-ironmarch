@@ -38,9 +38,12 @@ every sprite and battlefield is painted in code at load time.
    empowers them on it.
 
 **Controls:** click tray squad (or keys 1–9) → click field to place/drop ·
-right-click to unplace or cancel · Space to start the battle / pause · 2× speed.
+right-click to unplace or cancel · Space to start the battle / pause · 2× speed ·
+wheel to zoom, drag (nothing selected) to pan · Esc for the menu.
 **On touch:** tap a tray squad → drag on the field to aim the ghost, release to
-place · long-press to unplace or cancel.
+place · long-press to unplace or cancel · pinch to zoom, one-finger drag to pan.
+Portrait and landscape both work; portrait opens zoomed on your deployment zone.
+The ☰ button (map & battle) opens the pause menu with settings.
 
 ## Running it
 

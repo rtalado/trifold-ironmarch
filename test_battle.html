@@ -40,7 +40,17 @@
 <script>
 window.addEventListener('DOMContentLoaded', () => {
   const errs = [];
-  window.onerror = m => errs.push(m);
+  window.onerror = (m, src, line) => {
+    errs.push(`${m} @ ${(src || '').split('/').pop()}:${line}`);
+    let box = document.getElementById('errBox');
+    if (!box) {
+      box = document.createElement('pre');
+      box.id = 'errBox';
+      box.style.cssText = 'position:fixed;top:0;left:0;z-index:999;background:#300;color:#f88;padding:6px;font-size:11px;max-width:100%;white-space:pre-wrap';
+      document.body.appendChild(box);
+    }
+    box.textContent = errs.join('\n');
+  };
   Meta.load(); Render.init(); UI.init();
 
   const q = new URLSearchParams(location.search);
@@ -55,6 +65,9 @@ window.addEventListener('DOMContentLoaded', () => {
   };
   G.run.roster[5].up = true;   // one starred squad for the visuals
 
+  if (mode === 'armory') { UI.showArmory(); document.title = errs.length ? 'ERRORS' : 'ARMORY OK'; return; }
+  if (mode === 'settings') { UI.showSettings(() => {}); document.title = errs.length ? 'ERRORS' : 'SETTINGS OK'; return; }
+  if (mode === 'menu') { G.screen = 'map'; UI.showMenu(); document.title = errs.length ? 'ERRORS' : 'MENU OK'; return; }
   if (mode === 'map') {
     Run.start();
     G.run.floor = 0; G.run.pos = 0; G.run.map[0][0].done = true;

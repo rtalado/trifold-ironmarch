@@ -12,14 +12,9 @@
 </head>
 <body>
 
-<!-- rotate prompt: shown on small portrait screens only (see CSS) -->
-<div id="rotate">
-  <div>⟳</div>
-  <p>IRONMARCH marches in landscape.<br>Turn your device sideways.</p>
-</div>
-
 <!-- ======================= TITLE ======================= -->
 <div id="title" class="screen">
+  <canvas id="titleCanvas"></canvas>
   <div class="titleInner">
     <div class="titleKicker">A TRIFOLD TALE</div>
     <h1 class="titleName">IRONMARCH</h1>
@@ -28,6 +23,10 @@
     <div class="btnCol titleBtns">
       <button id="btnStart" class="bigBtn">BEGIN THE MARCH</button>
       <button id="btnResume" class="bigBtn ghostBtn hidden">RESUME THE MARCH</button>
+      <div class="btnRow">
+        <button id="btnArmory">THE ARMORY</button>
+        <button id="btnSettings">SETTINGS</button>
+      </div>
     </div>
     <p id="titleStats" class="dim"></p>
   </div>
@@ -45,6 +44,7 @@
       <span id="barRoster" class="stat"></span>
       <span id="barRelics"></span>
       <button id="btnRosterMap">THE COLUMN</button>
+      <button id="btnMenuMap" class="menuBtn" title="Menu">☰</button>
     </div>
   </div>
   <canvas id="mapCanvas"></canvas>
@@ -71,6 +71,7 @@
         <div class="hpLabel">RESERVE DROPS <span id="reserveNum"></span></div>
         <div class="reserveTrack"><div id="reserveFill"></div></div>
       </div>
+      <button id="btnMenuBattle" class="menuBtn" title="Menu">☰</button>
     </div>
   </div>
 

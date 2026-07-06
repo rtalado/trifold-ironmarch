@@ -24,6 +24,8 @@ function frame(t) {
       b.fx = b.fx.filter(f => f.ttl > 0);
     }
     if (G.battle) Render.draw(G.battle);
+  } else if (G.screen === 'title') {
+    UI.drawTitle(dt);
   }
   requestAnimationFrame(frame);
 }

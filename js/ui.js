@@ -14,70 +14,116 @@ const UI = {
     this.el.mapCv = document.getElementById('mapCanvas');
     const cv = document.getElementById('battleCanvas');
 
-    const toWorld = e => {
-      const rect = cv.getBoundingClientRect();
-      const scale = Math.min(rect.width / ARENA.w, rect.height / ARENA.h);
-      const offX = (rect.width - ARENA.w * scale) / 2;
-      const offY = (rect.height - ARENA.h * scale) / 2;
-      return {
-        wx: (e.clientX - rect.left - offX) / scale,
-        wy: (e.clientY - rect.top - offY) / scale,
-      };
-    };
-    // Pointer input. Mouse: hover ghost, click places, right-click unplaces.
-    // Touch: drag shows the ghost, release places, long-press unplaces/cancels.
-    const LP_MS = 450, LP_SLOP = 14;
-    let lpTimer = null, lpFired = false, touchDown = false, downX = 0, downY = 0, lastTouchT = -9999;
+    // Pointer input & camera gestures.
+    // Mouse: hover ghost, click places, right-click unplaces, wheel zooms,
+    //        left-drag pans when nothing is selected.
+    // Touch: with a squad selected, drag aims the ghost and release places;
+    //        otherwise one finger pans. Pinch zooms. Long-press unplaces/cancels.
+    const LP_SLOP = 14;
+    const ptrs = new Map();
+    let lpTimer = null, lpFired = false, touchDown = false;
+    let downX = 0, downY = 0, panning = false, pinch = null, gestureT = -9999, lastTouchT = -9999;
     const stopLP = () => { clearTimeout(lpTimer); lpTimer = null; };
     const pressField = (b, wx, wy) => {
       if (b.selected != null) { b.selected = null; this.refreshTray(b); return; }
       fieldUnplace(b, wx, wy);
     };
+    const pinchState = () => {
+      const [a, c] = [...ptrs.values()];
+      return { d: Math.hypot(a.x - c.x, a.y - c.y), mx: (a.x + c.x) / 2, my: (a.y + c.y) / 2 };
+    };
 
-    cv.addEventListener('pointermove', e => {
-      const p = toWorld(e);
-      Render.mouse.wx = p.wx; Render.mouse.wy = p.wy;
-      Render.mouse.over = p.wx > -40 && p.wx < ARENA.w + 40 && p.wy > -40 && p.wy < ARENA.h + 40;
-      if (lpTimer && Math.hypot(e.clientX - downX, e.clientY - downY) > LP_SLOP) stopLP();
-    });
-    cv.addEventListener('pointerleave', () => { Render.mouse.over = false; });
     cv.addEventListener('pointerdown', e => {
-      if (e.pointerType === 'mouse') return;
-      touchDown = true; lpFired = false;
-      downX = e.clientX; downY = e.clientY;
-      const p = toWorld(e);
+      ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+      if (ptrs.size === 2) { stopLP(); panning = false; pinch = pinchState(); gestureT = performance.now(); return; }
+      downX = e.clientX; downY = e.clientY; lpFired = false; panning = false;
+      if (e.pointerType === 'mouse') return; // click/contextmenu/drag-pan handle mouse
+      touchDown = true;
+      const p = Render.toWorld(e.clientX, e.clientY);
       Render.mouse.wx = p.wx; Render.mouse.wy = p.wy; Render.mouse.over = true;
       stopLP();
       lpTimer = setTimeout(() => {
         lpTimer = null; lpFired = true;
         const b = G.battle; if (!b) return;
-        if (navigator.vibrate) navigator.vibrate(25);
+        if (navigator.vibrate && Meta.settings.haptics) navigator.vibrate(25);
         pressField(b, p.wx, p.wy);
-      }, LP_MS);
+      }, Meta.settings.holdMs);
     });
-    cv.addEventListener('pointerup', e => {
-      if (e.pointerType === 'mouse') return;
-      touchDown = false; lastTouchT = performance.now();
-      stopLP();
+
+    cv.addEventListener('pointermove', e => {
+      const prev = ptrs.get(e.pointerId);
+      if (prev && pinch && ptrs.size === 2) {
+        ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        const now = pinchState();
+        if (pinch.d > 0) Render.zoomAt(now.mx, now.my, now.d / pinch.d);
+        Render.panBy(now.mx - pinch.mx, now.my - pinch.my);
+        pinch = now; gestureT = performance.now();
+        return;
+      }
+      const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
+      if (lpTimer && moved > LP_SLOP) stopLP();
       const b = G.battle;
-      if (!lpFired && b) { const p = toWorld(e); fieldClick(b, p.wx, p.wy); }
+      const held = prev && (e.pointerType !== 'mouse' || (e.buttons & 1));
+      if (held && (!b || b.selected == null) && (panning || moved > LP_SLOP)) {
+        panning = true; gestureT = performance.now();
+        Render.panBy(e.clientX - prev.x, e.clientY - prev.y);
+        ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        return;
+      }
+      if (prev) ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const p = Render.toWorld(e.clientX, e.clientY);
+      Render.mouse.wx = p.wx; Render.mouse.wy = p.wy;
+      Render.mouse.over = p.wx > -40 && p.wx < ARENA.w + 40 && p.wy > -40 && p.wy < ARENA.h + 40;
+    });
+
+    cv.addEventListener('pointerup', e => {
+      const wasGesture = panning || performance.now() - gestureT < 250;
+      ptrs.delete(e.pointerId);
+      if (pinch && ptrs.size < 2) pinch = null;
+      stopLP();
+      if (e.pointerType === 'mouse') { panning = false; return; }
+      touchDown = false; lastTouchT = performance.now();
+      const b = G.battle;
+      if (!lpFired && !wasGesture && b) {
+        const p = Render.toWorld(e.clientX, e.clientY);
+        fieldClick(b, p.wx, p.wy);
+      }
+      panning = false;
       Render.mouse.over = false;
     });
-    cv.addEventListener('pointercancel', () => { touchDown = false; stopLP(); Render.mouse.over = false; });
+    cv.addEventListener('pointercancel', e => {
+      ptrs.delete(e.pointerId);
+      if (ptrs.size < 2) pinch = null;
+      touchDown = false; panning = false; stopLP();
+      Render.mouse.over = false;
+    });
+    cv.addEventListener('pointerleave', () => { if (!ptrs.size) Render.mouse.over = false; });
+
+    cv.addEventListener('wheel', e => {
+      e.preventDefault();
+      Render.zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1.12 : 1 / 1.12);
+    }, { passive: false });
+
     cv.addEventListener('click', e => {
-      if (performance.now() - lastTouchT < 600) return; // synthesized after touch tap
+      const now = performance.now();
+      if (now - lastTouchT < 600 || now - gestureT < 300) return; // touch tap / pan already handled
       const b = G.battle; if (!b) return;
-      const p = toWorld(e);
+      const p = Render.toWorld(e.clientX, e.clientY);
       fieldClick(b, p.wx, p.wy);
     });
     cv.addEventListener('contextmenu', e => {
       e.preventDefault();
       if (touchDown || lpFired) return; // long-press already handled it
       const b = G.battle; if (!b) return;
-      const p = toWorld(e);
+      const p = Render.toWorld(e.clientX, e.clientY);
       pressField(b, p.wx, p.wy);
     });
     document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && (G.screen === 'menu' || ((G.screen === 'map' || G.screen === 'battle') && !(G.battle && G.battle.selected != null)))) {
+        this.toggleMenu();
+        return;
+      }
       const b = G.battle;
       if (!b) return;
       if (e.key === 'Escape' && b.selected != null) { b.selected = null; this.refreshTray(b); }
@@ -101,10 +147,15 @@ const UI = {
       }
     });
 
-    document.getElementById('btnStart').onclick = () => { this.clearSave(); Run.start(); };
-    document.getElementById('btnResume').onclick = () => this.resumeRun();
-    document.getElementById('btnRosterMap').onclick = () => this.showRoster(G.run.roster, { title: 'The Column' });
-    document.getElementById('btnFight').onclick = () => { const b = G.battle; if (b) beginFight(b); };
+    const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
+    on('btnStart', () => { this.clearSave(); Run.start(); });
+    on('btnResume', () => this.resumeRun());
+    on('btnArmory', () => this.showArmory());
+    on('btnSettings', () => this.showSettings(() => this.showTitle()));
+    on('btnRosterMap', () => this.showRoster(G.run.roster, { title: 'The Column' }));
+    on('btnMenuMap', () => this.showMenu());
+    on('btnMenuBattle', () => this.showMenu());
+    on('btnFight', () => { const b = G.battle; if (b) beginFight(b); });
     for (const s of [0, 1, 2]) {
       document.getElementById('spd' + s).onclick = () => { G.speed = s === 0 ? 0 : s; this.syncSpeed(); };
     }
@@ -124,6 +175,197 @@ const UI = {
       d.runs === 0 ? 'The column awaits its first order.' :
       `Marches: ${d.runs} · Victories: ${d.wins} · Squads unlocked: ${d.unlocked.length}/${META_UNLOCKS.reduce((n, u) => n + u.squads.length, 0)}`;
     document.getElementById('btnResume').classList.toggle('hidden', !localStorage.getItem('ironmarch_run_v2'));
+  },
+
+  // =================================================================
+  // TITLE BACKDROP — painted ridgelines under a slow ashfall
+  // =================================================================
+  titleBg: null, titleAsh: null,
+  drawTitle(dt) {
+    const cv = document.getElementById('titleCanvas');
+    if (!cv) return;
+    const r = cv.getBoundingClientRect();
+    if (!r.width) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = Math.round(r.width * dpr), h = Math.round(r.height * dpr);
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; this.titleBg = null; }
+    const g = cv.getContext('2d');
+
+    if (!this.titleBg) {
+      const bg = mkCanvas(w, h), q = bg.getContext('2d');
+      const sky = q.createLinearGradient(0, 0, 0, h);
+      sky.addColorStop(0, '#0b0c10'); sky.addColorStop(0.55, '#111320'); sky.addColorStop(1, '#191009');
+      q.fillStyle = sky; q.fillRect(0, 0, w, h);
+      // ember glow on the eastern horizon — the bloodfields wait
+      const gl = q.createRadialGradient(w * 0.82, h * 0.8, 0, w * 0.82, h * 0.8, Math.max(w, h) * 0.55);
+      gl.addColorStop(0, '#b8483a30'); gl.addColorStop(0.5, '#b8483a12'); gl.addColorStop(1, '#b8483a00');
+      q.fillStyle = gl; q.fillRect(0, 0, w, h);
+      const gd = q.createRadialGradient(w * 0.2, h * 0.9, 0, w * 0.2, h * 0.9, Math.max(w, h) * 0.4);
+      gd.addColorStop(0, '#d8b45a14'); gd.addColorStop(1, '#d8b45a00');
+      q.fillStyle = gd; q.fillRect(0, 0, w, h);
+      // ridgelines, far to near
+      const layers = [
+        { base: 0.66, amp: 0.06, f: 5.1, col: '#14161d' },
+        { base: 0.76, amp: 0.08, f: 3.3, col: '#0e1015' },
+        { base: 0.87, amp: 0.06, f: 4.2, col: '#08090c' },
+      ];
+      layers.forEach((L, li) => {
+        q.fillStyle = L.col;
+        q.beginPath(); q.moveTo(0, h);
+        for (let x = 0; x <= w; x += Math.max(2, w / 240)) {
+          const a = x / w * Math.PI * L.f + li * 13.7;
+          const yy = h * L.base + h * L.amp * (Math.sin(a) * 0.6 + Math.sin(a * 2.63) * 0.3 + Math.sin(a * 6.1) * 0.1);
+          q.lineTo(x, yy);
+        }
+        q.lineTo(w, h); q.closePath(); q.fill();
+      });
+      this.titleBg = bg;
+      this.titleAsh = Array.from({ length: 60 }, () => ({
+        x: rand(0, w), y: rand(0, h),
+        vx: rand(-16, -5) * dpr, vy: rand(-9, -2) * dpr,
+        r: rand(0.7, 1.9) * dpr, a: rand(0.08, 0.4),
+        gold: Math.random() < 0.3,
+      }));
+    }
+
+    g.drawImage(this.titleBg, 0, 0);
+    for (const m of this.titleAsh) {
+      m.x += m.vx * dt; m.y += m.vy * dt;
+      if (m.x < -4) m.x += w + 8;
+      if (m.y < -4) m.y += h + 8;
+      g.fillStyle = m.gold ? `rgba(216,180,90,${m.a})` : `rgba(150,152,165,${m.a * 0.8})`;
+      g.beginPath(); g.arc(m.x, m.y, m.r, 0, 7); g.fill();
+    }
+  },
+
+  // =================================================================
+  // PAUSE MENU & SETTINGS
+  // =================================================================
+  toggleMenu() {
+    if (G.screen === 'menu') { G.screen = this.menuFrom; this.show(this.menuFrom); }
+    else this.showMenu();
+  },
+
+  showMenu() {
+    if (G.screen === 'map' || G.screen === 'battle') { this.menuFrom = G.screen; G.screen = 'menu'; }
+    if (!this.menuFrom) return;
+    const inBattle = this.menuFrom === 'battle';
+    const p = this.overlay(`
+      <h2>THE MARCH HALTS</h2>
+      <div class="btnCol">
+        <button id="mnBack">Continue</button>
+        <button id="mnSettings">Settings</button>
+        <button id="mnTitle" class="ghostBtn">${inBattle ? 'Retreat to the muster' : 'Return to the muster'}</button>
+      </div>
+      ${inBattle ? '<p class="dim small" style="margin-top:14px">Retreating abandons this battle — the field resets when you return.</p>'
+                 : '<p class="dim small" style="margin-top:14px">The run is saved. The column holds position.</p>'}
+    `);
+    p.querySelector('#mnBack').onclick = () => { G.screen = this.menuFrom; this.show(this.menuFrom); };
+    p.querySelector('#mnSettings').onclick = () => this.showSettings(() => this.showMenu());
+    this.arm(p.querySelector('#mnTitle'), inBattle ? 'Abandon the field?' : 'Leave the map?', () => {
+      G.battle = null;
+      this.showTitle();
+    });
+  },
+
+  showSettings(backFn) {
+    const prev = G.screen;
+    if (prev !== 'menu') G.screen = 'settings';
+    const s = Meta.settings;
+    const hasRun = !!(G.run || localStorage.getItem('ironmarch_run_v2'));
+    const p = this.overlay(`
+      <h2>SETTINGS</h2>
+      <div class="setList">
+        <div class="setRow">Screen shake<button id="stShake"></button></div>
+        <div class="setRow">Touch rumble<button id="stHaptics"></button></div>
+        <div class="setRow">Long-press speed
+          <span class="setOpts">
+            <button data-ms="300">Quick</button><button data-ms="450">Normal</button><button data-ms="650">Slow</button>
+          </span>
+        </div>
+      </div>
+      <div class="btnCol" style="margin-top:20px">
+        <button id="stUpdate" class="ghostBtn">⟳ Fetch latest version</button>
+        ${hasRun ? '<button id="stAbandon" class="ghostBtn">Abandon the current run</button>' : ''}
+        <button id="stWipe" class="ghostBtn">Reset all progress</button>
+        <button id="stBack">Back</button>
+      </div>
+    `);
+    const syncToggles = () => {
+      p.querySelector('#stShake').textContent = s.shake ? 'ON' : 'OFF';
+      p.querySelector('#stShake').classList.toggle('on', s.shake);
+      p.querySelector('#stHaptics').textContent = s.haptics ? 'ON' : 'OFF';
+      p.querySelector('#stHaptics').classList.toggle('on', s.haptics);
+      for (const b of p.querySelectorAll('.setOpts button'))
+        b.classList.toggle('on', Number(b.dataset.ms) === s.holdMs);
+    };
+    syncToggles();
+    p.querySelector('#stShake').onclick = () => { s.shake = !s.shake; Meta.saveSettings(); syncToggles(); };
+    p.querySelector('#stHaptics').onclick = () => {
+      s.haptics = !s.haptics; Meta.saveSettings(); syncToggles();
+      if (s.haptics && navigator.vibrate) navigator.vibrate(25);
+    };
+    for (const b of p.querySelectorAll('.setOpts button'))
+      b.onclick = () => { s.holdMs = Number(b.dataset.ms); Meta.saveSettings(); syncToggles(); };
+    p.querySelector('#stUpdate').onclick = () => location.reload();
+    if (hasRun) this.arm(p.querySelector('#stAbandon'), 'Strike the column?', () => {
+      this.clearSave(); G.run = null; G.battle = null; this.showTitle();
+    });
+    this.arm(p.querySelector('#stWipe'), 'Forget every march?', () => {
+      localStorage.removeItem(Meta.KEY); this.clearSave();
+      G.run = null; G.battle = null; Meta.load(); this.showTitle();
+    });
+    p.querySelector('#stBack').onclick = backFn;
+  },
+
+  // two-tap confirm for destructive buttons
+  arm(btn, armedLabel, fn) {
+    const orig = btn.textContent;
+    btn.onclick = () => {
+      if (btn.dataset.armed) { fn(); return; }
+      btn.dataset.armed = '1';
+      btn.classList.add('armed');
+      btn.textContent = armedLabel;
+      setTimeout(() => {
+        if (!btn.isConnected) return;
+        delete btn.dataset.armed;
+        btn.classList.remove('armed');
+        btn.textContent = orig;
+      }, 2600);
+    };
+  },
+
+  // =================================================================
+  // ARMORY — every squad type, locked ones show their requisition
+  // =================================================================
+  showArmory() {
+    G.screen = 'armory';
+    const have = Meta.pool();
+    const p = this.overlay(`
+      <h2>THE ARMORY <span class="dim">(${have.length}/${Object.keys(SQUADS).length} requisitioned)</span></h2>
+      <p class="dim small">Squads your column can muster. Locked requisitions are earned by marching.</p>
+      <div class="cardRow wrap" id="amCards"></div>
+      <button id="amBack" class="ghostBtn">Back</button>
+    `);
+    const row = p.querySelector('#amCards');
+    const needOf = id => {
+      for (const u of META_UNLOCKS) if (u.squads.includes(id)) {
+        return u.need.wins ? `${u.label} — ${u.need.wins} victor${u.need.wins > 1 ? 'ies' : 'y'}` : `${u.label} — ${u.need.runs} march${u.need.runs > 1 ? 'es' : ''}`;
+      }
+      return '';
+    };
+    for (const id of Object.keys(SQUADS)) {
+      const el = this.squadEl(id, { small: true });
+      if (!have.includes(id)) {
+        el.classList.add('locked');
+        const lock = document.createElement('div');
+        lock.className = 'lockNote';
+        lock.textContent = needOf(id);
+        el.appendChild(lock);
+      }
+      row.appendChild(el);
+    }
+    p.querySelector('#amBack').onclick = () => this.showTitle();
   },
 
   saveRun() { try { localStorage.setItem('ironmarch_run_v2', JSON.stringify(G.run)); } catch (e) {} },
@@ -161,19 +403,26 @@ const UI = {
     const facPal = PAL[act.fac];
     glowDot(g, facPal.glow + '14', cssW * 0.86, cssH * 0.12, 46);
 
-    // layout
+    // layout: floors march west→east, or south→north on portrait screens
     this.mapNodes = [];
     const floors = r.map, n = floors.length;
     const choiceSet = Run.choices();
+    const vert = cssH > cssW;
     for (let fl = 0; fl < n; fl++) {
       const row = floors[fl];
-      const x = 80 + (cssW - 180) * (fl / (n - 1));
+      const along = n === 1 ? 0.5 : fl / (n - 1);
       for (let i = 0; i < row.length; i++) {
-        const y = cssH / 2 + (i - (row.length - 1) / 2) * Math.min(140, cssH * 0.28) + Math.sin(fl * 3.7 + i * 5.1) * 16;
+        const off = i - (row.length - 1) / 2;
+        const wob = Math.sin(fl * 3.7 + i * 5.1) * 16;
+        const x = vert ? cssW / 2 + off * Math.min(120, cssW * 0.3) + wob
+                       : 80 + (cssW - 180) * along;
+        const y = vert ? (cssH - 100) - (cssH - 200) * along
+                       : cssH / 2 + off * Math.min(140, cssH * 0.28) + wob;
         this.mapNodes.push({ x, y, node: row[i], clickable: choiceSet.includes(row[i]) });
       }
     }
     // edges
+    const ex = vert ? 0 : 22, ey = vert ? -22 : 0;
     g.strokeStyle = '#3a3f4d'; g.lineWidth = 1.5; g.setLineDash([3, 6]);
     for (let fl = 0; fl < n - 1; fl++) {
       const cur = this.mapNodes.filter(m => m.node.fl === fl);
@@ -181,7 +430,7 @@ const UI = {
       for (const a of cur) for (const bn of nxt) {
         const proj = cur.length === 1 ? (nxt.length - 1) / 2 : a.node.i * (nxt.length - 1) / (cur.length - 1);
         if (Math.abs(bn.node.i - proj) <= 1) {
-          g.beginPath(); g.moveTo(a.x + 22, a.y); g.lineTo(bn.x - 22, bn.y); g.stroke();
+          g.beginPath(); g.moveTo(a.x + ex, a.y + ey); g.lineTo(bn.x - ex, bn.y - ey); g.stroke();
         }
       }
     }
@@ -203,14 +452,21 @@ const UI = {
       this.drawIcon(g, m.node.type, m.x, m.y, R * 0.62, done ? '#4a5264' : col);
       if (cur) { g.strokeStyle = '#e8ecf4'; g.lineWidth = 1.5; g.beginPath(); g.arc(m.x, m.y, R + 5, 0, 7); g.stroke(); }
     }
-    // legend
-    let lx = 22;
+    // legend (wraps on narrow screens)
+    let lx = 22, ly = cssH - 22;
     g.font = '13px Georgia, serif'; g.textBaseline = 'middle';
-    for (const [type, label] of [['battle','battle'],['elite','elite'],['event','event'],['shop','market'],['rest','camp'],['treasure','cache'],['boss','boss']]) {
-      this.drawIcon(g, type, lx + 8, cssH - 22, 7, '#5a6478');
+    const legend = [['battle','battle'],['elite','elite'],['event','event'],['shop','market'],['rest','camp'],['treasure','cache'],['boss','boss']];
+    if (vert) {
+      const rows = Math.ceil(legend.reduce((w, [, l]) => w + 48 + g.measureText(l).width, 0) / (cssW - 44));
+      ly = cssH - 12 - (rows - 1) * 20;
+    }
+    for (const [type, label] of legend) {
+      const w = 30 + g.measureText(label).width + 18;
+      if (lx + w > cssW - 12) { lx = 22; ly += 20; }
+      this.drawIcon(g, type, lx + 8, ly, 7, '#5a6478');
       g.fillStyle = '#5a6478'; g.textAlign = 'left';
-      g.fillText(label, lx + 20, cssH - 21);
-      lx += 30 + g.measureText(label).width + 18;
+      g.fillText(label, lx + 20, ly + 1);
+      lx += w;
     }
   },
 
