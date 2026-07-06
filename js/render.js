@@ -145,6 +145,10 @@ const Render = {
           g.strokeStyle = ok ? '#8ce6a044' : '#e8635a44'; g.setLineDash([6, 8]);
           g.beginPath(); g.arc(p.x, p.y, u.rng, 0, 7); g.stroke(); g.setLineDash([]);
         }
+        g.fillStyle = b.stance === 'hold' ? '#8fd8e8dd' : '#ffd27add';
+        g.font = 'bold 11px Georgia, serif'; g.textAlign = 'center';
+        g.fillText(b.stance === 'hold' ? 'HOLD' : 'ADVANCE', p.x, p.y - u.w - 14);
+        g.textAlign = 'left';
       }
     }
 
@@ -203,6 +207,10 @@ const Render = {
     if (e.boss) {
       g.strokeStyle = PAL[e.fac].glow + '66'; g.lineWidth = 2;
       g.beginPath(); g.arc(e.x, e.y, e.w + 9 + Math.sin(t * 2) * 2, 0, 7); g.stroke();
+    }
+    if (e.side === 'player' && e.squad && e.squad.hold) {
+      g.strokeStyle = '#8fd8e877'; g.lineWidth = 1; g.setLineDash([3, 3]);
+      g.beginPath(); g.arc(e.x, e.y, e.w + 5, 0, 7); g.stroke(); g.setLineDash([]);
     }
     if (e.hitT && t - e.hitT < 0.1) glowDot(g, '#ffffff44', e.x, e.y, e.w * 0.55);
     if (e.hp < e.maxhp) this.hpBar(g, e.x, e.y - e.w - 10, Math.max(20, e.w * 2.1), e, false);

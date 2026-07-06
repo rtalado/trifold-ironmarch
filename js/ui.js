@@ -166,6 +166,7 @@ const UI = {
     on('btnMenuMap', () => this.showMenu());
     on('btnMenuBattle', () => this.showMenu());
     on('btnFight', () => { const b = G.battle; if (b) beginFight(b); });
+    on('btnStance', () => this.toggleStance());
     for (const s of [0, 1, 2]) {
       document.getElementById('spd' + s).onclick = () => { G.speed = s === 0 ? 0 : s; this.syncSpeed(); };
     }
@@ -753,6 +754,7 @@ const UI = {
     this.show('battle');
     const hqEl = document.getElementById('hqName');
     if (hqEl) hqEl.textContent = (FACTIONS[G.run.fac] || FACTIONS.vanguard).hqName.toUpperCase();
+    this.syncStance(b);
     Render.prepare(b);
     document.getElementById('encName').textContent =
       (b.enc.boss ? '♛ ' : b.enc.elite ? '☠ ' : '') + coreName(b.fac) + ' — ' + ACTS[G.run.act].name.split('—')[1].trim();
@@ -777,6 +779,23 @@ const UI = {
     for (const s of [0, 1, 2]) document.getElementById('spd' + s).classList.toggle('on', (s === 0 ? 0 : s) === G.speed);
   },
 
+  // ---------------- placement stance (advance vs hold position) ----------------
+  toggleStance() {
+    const b = G.battle; if (!b) return;
+    b.stance = b.stance === 'hold' ? 'advance' : 'hold';
+    this.syncStance(b);
+  },
+  syncStance(b) {
+    const btn = document.getElementById('btnStance');
+    if (!btn) return;
+    const hold = b.stance === 'hold';
+    btn.textContent = hold ? '⛨ HOLD' : '⚑ ADVANCE';
+    btn.classList.toggle('on', hold);
+    btn.title = hold
+      ? 'New squads will stand their ground and defend where placed'
+      : 'New squads will advance and seek the enemy';
+  },
+
   refreshBattleHUD(b) {
     const hqF = clamp(b.hq.hp / b.hq.maxhp, 0, 1), coF = clamp(b.core.hp / b.core.maxhp, 0, 1);
     document.getElementById('hqFill').style.width = (hqF * 100) + '%';
@@ -787,6 +806,11 @@ const UI = {
       document.getElementById('reserveNum').textContent = b.reserveLeft;
       const cdMax = ECON.reserveCd * b.hooks.reserveCdMult;
       document.getElementById('reserveFill').style.width = ((1 - b.reserveCdT / cdMax) * 100) + '%';
+      const rs = document.getElementById('reserveSquads');
+      if (rs) {
+        const n = this.trayOrder ? this.trayOrder.length : 0;
+        rs.textContent = `· ${n} squad${n === 1 ? '' : 's'} ready`;
+      }
     }
   },
 
@@ -822,9 +846,10 @@ const UI = {
     });
     const note = document.createElement('div');
     note.className = 'trayNote dim small';
+    const reserveCount = this.trayOrder.length;
     note.innerHTML = b.phase === 'place'
-      ? 'Pick a squad, then tap your zone to deploy.<br>Undeployed squads become <b>reserves</b>.'
-      : `Reserves: pick a squad, then tap your zone to drop it.`;
+      ? `Pick a squad, then tap your zone to deploy.<br>Undeployed squads become <b>reserves</b> (currently <b>${reserveCount}</b>). Toggle <b>stance</b> to hold a defensive line.`
+      : `Reserves: pick a squad, then tap your zone to drop it. <b>${reserveCount}</b> left to call in.<br>Toggle <b>stance</b> to hold position instead of advancing.`;
     this.el.tray.appendChild(note);
   },
 

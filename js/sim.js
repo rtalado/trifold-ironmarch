@@ -27,6 +27,7 @@ function newBattle(encId, run) {
     shake: 0, phase: 'place',        // place | fight
     wiped: [],                       // roster indices lost this battle
     lastStandUsed: false,
+    stance: 'advance',               // stance applied to the NEXT squad placed: 'advance' | 'hold'
     nextWave: 35,
     reserveLeft: ECON.reserveDrops + hooks.reserveAdd,
     reserveCdT: 0,
@@ -90,14 +91,15 @@ function makeModel(b, side, unitId, x, y, umod, squad) {
 }
 
 // One roster squad → `models` entities in a small cluster around (x,y).
-function spawnSquad(b, side, unitId, x, y, up, rosterIdx) {
+function spawnSquad(b, side, unitId, x, y, up, rosterIdx, hold) {
   const u = UNITS[unitId];
-  const squad = { side, unitId, rosterIdx: rosterIdx == null ? null : rosterIdx, alive: u.models, up: !!up };
+  const squad = { side, unitId, rosterIdx: rosterIdx == null ? null : rosterIdx, alive: u.models, up: !!up, hold: !!hold };
   b.squads.push(squad);
   const umod = up ? { hpM: 1.3, dmgM: 1.3 } : null;
   const n = u.models;
   for (let i = 0; i < n; i++) {
-    const a = (i / n) * Math.PI * 2, d = n > 1 ? u.w * 1.7 : 0;
+    // wider spread than a tight huddle — keeps one splash hit from catching the whole squad
+    const a = (i / n) * Math.PI * 2, d = n > 1 ? u.w * 2.2 : 0;
     const mx = clamp(x + Math.cos(a) * d, 20, ARENA.w - 20);
     const my = clamp(y + Math.sin(a) * d, 20, ARENA.h - 20);
     makeModel(b, side, unitId, mx, my, umod, squad);
@@ -214,6 +216,15 @@ function effRof(b, e) {
   if (e.frenzy > b.t) r *= FRENZY.dmgMult;
   return r;
 }
+// Defensive auras (e.g. Rampart): strongest nearby armor aura on the target's own side.
+function auraArmorMult(b, target) {
+  let mult = 1;
+  for (const a of b.ents) {
+    if (a.dead || a === target || a.side !== target.side || !a.aura || !a.aura.armor) continue;
+    if (dist2(a.x, a.y, target.x, target.y) < a.aura.rng * a.aura.rng) mult = Math.min(mult, a.aura.armor);
+  }
+  return mult;
+}
 
 // ---------------------------------------------------------------------------
 // Damage & death
@@ -229,6 +240,7 @@ function dealDamage(b, target, amt, source) {
     amt *= target.side === 'player' ? b.hooks.ruinsGuard : TERRAIN_FX.ruinsGuard;
   }
   if (target.core && target.side === 'player') amt *= b.hooks.hqArmor;
+  amt *= auraArmorMult(b, target);
   if (amt <= 0) return;
   // last stand: once per battle a player squad refuses to die
   if (target.side === 'player' && target.squad && target.squad.alive === 1 &&
@@ -403,6 +415,9 @@ function simTick(b, dt) {
         if (wounded) { gx = wounded.x; gy = wounded.y;
           if (dist2(e.x, e.y, gx, gy) < (e.healRng * 0.6) ** 2) continue; }
         else continue;
+      } else if (e.side === 'player' && e.squad && e.squad.hold && !tooClose) {
+        // Hold stance: stand your ground — only fall back if something got inside min range.
+        gx = e.x; gy = e.y;
       }
       if (tooClose) back = true;
       const spd = effSpd(b, e);

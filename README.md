@@ -55,6 +55,18 @@ place · long-press to unplace or cancel · pinch to zoom, one-finger drag to pa
 Portrait and landscape both work; portrait opens zoomed on your deployment zone.
 The ☰ button (map & battle) opens the pause menu with settings.
 
+**Stance:** the ADVANCE/HOLD toggle next to the fight button sets the stance for
+the *next* squad you place (or reserve-drop). ADVANCE squads seek and engage
+the enemy as usual; HOLD squads stand their ground and only fire at whatever
+comes into range — pair them with turrets/emplacements for a real defensive
+line instead of everyone rushing forward. Held squads show a dashed ring.
+
+**Reserves:** squads left undeployed at "Sound the Advance" become reserves —
+drop them mid-fight from the tray (2 drops by default, on a cooldown). The
+tray note and the reserve HUD both show how many squads are actually available
+to drop; if you deploy your whole roster you'll get a heads-up that there's
+nothing left to hold back.
+
 ## Running it
 
 Open `index.html` in any modern browser. That's it.

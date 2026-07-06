@@ -42,14 +42,14 @@ function fieldClick(b, wx, wy) {
   if (!validPlace(b, p.x, p.y, entry.id)) { UI.hint('Deploy inside your zone — clear of crags and the HQ'); return; }
 
   if (b.phase === 'place') {
-    const squad = spawnSquad(b, 'player', entry.id, p.x, p.y, entry.up, i);
+    const squad = spawnSquad(b, 'player', entry.id, p.x, p.y, entry.up, i, b.stance === 'hold');
     b.deployed[i] = true;
     b.selected = null;
     b.fx.push({ kind: 'deploy', x: p.x, y: p.y, ttl: 0.5 });
   } else if (b.phase === 'fight' && !b.over) {
     if (b.reserveLeft <= 0) { UI.hint('No reserve drops left'); return; }
     if (b.reserveCdT > 0) { UI.hint('Reserves recharging…'); return; }
-    spawnSquad(b, 'player', entry.id, p.x, p.y, entry.up, i);
+    spawnSquad(b, 'player', entry.id, p.x, p.y, entry.up, i, b.stance === 'hold');
     b.deployed[i] = true;
     b.selected = null;
     b.reserveLeft--;
@@ -82,9 +82,11 @@ function beginFight(b) {
   if (!b.ents.some(e => e.side === 'player' && !e.core && !e.dead)) {
     UI.hint('Deploy at least one squad'); return;
   }
+  const heldBack = G.run.roster.some((_, idx) => !b.deployed[idx] && !b.wiped.includes(idx));
   b.phase = 'fight';
   b.selected = null;
   UI.enterFight(b);
+  if (!heldBack) UI.hint('No squads held back — reserve drops unavailable this fight');
 }
 
 // ---------------------------------------------------------------------------

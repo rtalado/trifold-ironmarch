@@ -125,6 +125,9 @@ button:disabled { opacity: 0.4; cursor: default; }
 .fightBtn:hover { background: #d8b45a1a; }
 .speedBox button { padding: 4px 10px; font-size: 12px; }
 .speedBox .on { border-color: var(--gold); color: var(--gold); }
+.stanceBtn { font-size: 12px; padding: 8px 14px; letter-spacing: 0.08em; }
+.stanceBtn.on { border-color: var(--blue); color: var(--blue); box-shadow: 0 0 12px #6fb3e822; }
+#reserveSquads { font-size: 11px; }
 #reserveBox .hpLabel { margin-bottom: 2px; }
 .reserveTrack { height: 5px; width: 110px; background: #000a; border: 1px solid #2c3040; }
 #reserveFill { height: 100%; background: var(--gold); }
@@ -305,6 +308,7 @@ button.armed { border-color: var(--blood); color: var(--blood); }
   .actName { font-size: 15px; }
   .battleTop { gap: 10px; padding: 4px 10px; }
   .fightBtn { font-size: 12px; padding: 7px 12px; }
+  .stanceBtn { font-size: 10.5px; padding: 6px 10px; }
   .encName { font-size: 11px; }
   .hpTrack { width: 120px; }
   #tray { min-height: 92px; padding: 6px 10px 8px; gap: 7px; }

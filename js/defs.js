@@ -47,7 +47,7 @@ const UNITS = {
   leviathan:  { name:'Leviathan',      fac:'vanguard', models:1, pts:18, hp:980, dmg:48, rng:190, rof:0.8, spd:30, w:22, air:true, splash:36 },
   ratte:      { name:'The Ratte',      fac:'vanguard', models:1, pts:26, hp:1600,dmg:60, rng:330, rof:0.6, spd:16, w:28, air:true, splash:60 },
   // ---- emplacements (spd 0, placed like squads) ----
-  turret:     { name:'Turret',         fac:'vanguard', models:1, pts:4,  hp:160, dmg:9,  rng:210, rof:1.6, spd:0, w:12, air:true, struct:true },
+  turret:     { name:'Turret',         fac:'vanguard', models:1, pts:4,  hp:170, dmg:11, rng:230, rof:1.6, spd:0, w:12, air:true, struct:true },
   pillbox:    { name:'Pillbox',        fac:'vanguard', models:1, pts:6,  hp:420, dmg:14, rng:190, rof:2.0, spd:0, w:15, struct:true },
   cannon:     { name:'Cannon Emplacement', fac:'vanguard', models:1, pts:8, hp:240, dmg:44, rng:380, rof:0.3, spd:0, w:15, splash:48, minRng:140, struct:true },
   hospital:   { name:'Field Hospital', fac:'vanguard', models:1, pts:6,  hp:220, dmg:0,  rng:0, rof:0, spd:0, w:15, struct:true, heal:5, healRng:180 },
@@ -64,7 +64,7 @@ const UNITS = {
   juggernaut: { name:'Juggernaut',     fac:'syndicate', models:1, pts:8,  hp:320, dmg:30, rng:180, rof:0.55,spd:48, w:16, splash:36 },
   demolisher: { name:'Demolisher',     fac:'syndicate', models:1, pts:9,  hp:120, dmg:46, rng:390, rof:0.28,spd:32, w:15, splash:50, minRng:150 },
   warlord:    { name:'The Warlord',    fac:'syndicate', models:1, pts:16, hp:850, dmg:40, rng:260, rof:0.7, spd:34, w:20, air:true, splash:44 },
-  watchpost:  { name:'Watchpost',      fac:'syndicate', models:1, pts:4,  hp:150, dmg:8,  rng:220, rof:1.5, spd:0, w:11, air:true, struct:true },
+  watchpost:  { name:'Watchpost',      fac:'syndicate', models:1, pts:4,  hp:150, dmg:10, rng:220, rof:1.5, spd:0, w:11, air:true, struct:true },
   gunbastion: { name:'Gun Bastion',    fac:'syndicate', models:1, pts:7,  hp:520, dmg:20, rng:230, rof:0.9, spd:0, w:15, splash:30, struct:true },
   goldvault:  { name:'Bullion Vault',  fac:'syndicate', models:1, pts:5,  hp:260, dmg:0,  rng:0,   rof:0,   spd:0, w:14, struct:true, rent:10 },
 
@@ -78,8 +78,8 @@ const UNITS = {
   ironclad:   { name:'Ironclad',       fac:'warden', models:1, pts:8,  hp:420, dmg:22, rng:38,  rof:0.9, spd:40, w:16 },
   castellan:  { name:'Castellan',      fac:'warden', models:1, pts:12, hp:700, dmg:34, rng:220, rof:0.6, spd:26, w:19, air:true, splash:30 },
   trebuchet:  { name:'Trebuchet',      fac:'warden', models:1, pts:11, hp:90,  dmg:60, rng:460, rof:0.22,spd:22, w:15, splash:60, minRng:200 },
-  rampart:    { name:'Rampart',        fac:'warden', models:1, pts:3,  hp:520, dmg:0,  rng:0,   rof:0,   spd:0, w:14, struct:true, rent:2 },
-  ballista:   { name:'Ballista Tower', fac:'warden', models:1, pts:5,  hp:220, dmg:30, rng:320, rof:0.5, spd:0, w:13, air:true, struct:true },
+  rampart:    { name:'Rampart',        fac:'warden', models:1, pts:3,  hp:620, dmg:0,  rng:0,   rof:0,   spd:0, w:14, struct:true, rent:2, aura:{rng:150, armor:0.85} },
+  ballista:   { name:'Ballista Tower', fac:'warden', models:1, pts:5,  hp:230, dmg:34, rng:320, rof:0.5, spd:0, w:13, air:true, struct:true },
   cauldron:   { name:'Oil Cauldron',   fac:'warden', models:1, pts:5,  hp:300, dmg:16, rng:120, rof:1.1, spd:0, w:13, splash:34, struct:true },
   redoubt:    { name:'Redoubt',        fac:'warden', models:1, pts:8,  hp:380, dmg:24, rng:300, rof:0.6, spd:0, w:15, splash:36, struct:true },
   bulwark:    { name:'The Bulwark',    fac:'warden', models:1, pts:18, hp:1500,dmg:36, rng:280, rof:1.2, spd:0, w:22, air:true, splash:26, struct:true },
@@ -88,7 +88,7 @@ const UNITS = {
   swarmling:  { name:'Swarmlings',     fac:'myriad', models:5, pts:4,  hp:30,  dmg:5,  rng:22, rof:1.8, spd:92, w:8 },
   spitter:    { name:'Spitters',       fac:'myriad', models:3, pts:5,  hp:55,  dmg:10, rng:160,rof:0.9, spd:58, w:10, air:true },
   hunter:     { name:'Hunters',        fac:'myriad', models:2, pts:6,  hp:85,  dmg:14, rng:26, rof:1.4, spd:120,w:10 },
-  miasma:     { name:'Miasma Hosts',   fac:'myriad', models:2, pts:6,  hp:70,  dmg:4,  rng:24, rof:1,   spd:64, w:11, deathBurst:{dmg:30, rng:70} },
+  miasma:     { name:'Miasma Hosts',   fac:'myriad', models:2, pts:6,  hp:70,  dmg:4,  rng:24, rof:1,   spd:64, w:11, deathBurst:{dmg:20, rng:52} },
   broodtyrant:{ name:'Brood Tyrant',   fac:'myriad', models:1, pts:11, hp:600, dmg:30, rng:44, rof:0.8, spd:44, w:19, splash:40 },
   broodmother:{ name:'Broodmother',    fac:'myriad', models:1, pts:12, hp:420, dmg:10, rng:150,rof:0.7, spd:36, w:18, air:true, spawn:{unit:'swarmling', every:7} },
   hiveRegent: { name:'Hive Regent',    fac:'myriad', models:1, pts:30, hp:1600,dmg:34, rng:64, rof:0.9, spd:26, w:26, splash:50, boss:true,
@@ -173,7 +173,7 @@ const FACTIONS = {
     perks:['Emplacements have +25% HP', 'Masonry rent: every surviving emplacement pays scrap after victory', 'Tough, slow squads and the longest-ranged siege in the war'],
     start:['sentinel','sentinel','wardenguard','marshal','ballista'],
     basic:'sentinel', hqName:'Bastion Keep',
-    battle:{ structHpMult:1.25, structRent:2 },
+    battle:{ structHpMult:1.35, structRent:2 },
   },
 };
 
