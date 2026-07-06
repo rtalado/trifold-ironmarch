@@ -248,6 +248,12 @@ button.armed { border-color: var(--blood); color: var(--blood); }
 .setRow button { padding: 5px 14px; font-size: 12px; min-width: 56px; }
 .setOpts { display: flex; gap: 6px; }
 .setRow button.on { border-color: var(--gold); color: var(--gold); }
+.saveBox {
+  width: 100%; min-height: 110px; margin: 10px 0 2px;
+  background: #0e1015; color: var(--text); border: 1px solid var(--line);
+  font: 11px/1.5 monospace; padding: 8px; resize: vertical;
+  -webkit-user-select: text; user-select: text;
+}
 .card.locked { opacity: 0.45; filter: grayscale(0.9); cursor: default; }
 .lockNote {
   position: absolute; inset: auto 4px 34%;

@@ -147,6 +147,15 @@ const UI = {
       }
     });
 
+    // System back (Android gesture / browser back) drives in-game navigation:
+    // a re-armed history trap turns each back-press into a backAction().
+    if (location.protocol.startsWith('http')) {
+      window.addEventListener('popstate', () => {
+        this.navArmed = false;
+        if (this.backAction()) this.armBack();
+      });
+    }
+
     const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
     on('btnStart', () => { this.clearSave(); Run.start(); });
     on('btnResume', () => this.resumeRun());
@@ -163,13 +172,28 @@ const UI = {
 
   show(name) {
     for (const id of ['title','map','battle','overlay']) this.el[id].classList.toggle('hidden', id !== name);
+    if (name !== 'title') this.armBack();
+  },
+
+  // ---------------- system back integration ----------------
+  navArmed: false, backFn: null,
+  armBack() {
+    if (this.navArmed || !location.protocol.startsWith('http')) return;
+    try { history.pushState({ ironmarch: 1 }, ''); this.navArmed = true; } catch (e) {}
+  },
+  backAction() {
+    if (this.backFn) { const f = this.backFn; this.backFn = null; f(); return true; }
+    if (G.screen === 'menu') { G.screen = this.menuFrom; this.show(this.menuFrom); return true; }
+    if (G.screen === 'map' || G.screen === 'battle') { this.showMenu(); return true; }
+    if (G.screen === 'title') return false;      // let the app background/exit
+    return true;                                  // required-choice overlays: stay put
   },
 
   // =================================================================
   // TITLE
   // =================================================================
   showTitle() {
-    G.screen = 'title'; this.show('title');
+    G.screen = 'title'; this.backFn = null; this.show('title');
     const d = Meta.data;
     document.getElementById('titleStats').textContent =
       d.runs === 0 ? 'The column awaits its first order.' :
@@ -249,6 +273,7 @@ const UI = {
   showMenu() {
     if (G.screen === 'map' || G.screen === 'battle') { this.menuFrom = G.screen; G.screen = 'menu'; }
     if (!this.menuFrom) return;
+    this.backFn = null;
     const inBattle = this.menuFrom === 'battle';
     const p = this.overlay(`
       <h2>THE MARCH HALTS</h2>
@@ -271,6 +296,8 @@ const UI = {
   showSettings(backFn) {
     const prev = G.screen;
     if (prev !== 'menu') G.screen = 'settings';
+    this.settingsBack = backFn;
+    this.backFn = backFn;
     const s = Meta.settings;
     const hasRun = !!(G.run || localStorage.getItem('ironmarch_run_v2'));
     const p = this.overlay(`
@@ -281,6 +308,11 @@ const UI = {
         <div class="setRow">Long-press speed
           <span class="setOpts">
             <button data-ms="300">Quick</button><button data-ms="450">Normal</button><button data-ms="650">Slow</button>
+          </span>
+        </div>
+        <div class="setRow">Save data
+          <span class="setOpts">
+            <button id="stExport">Export</button><button id="stImport">Import</button>
           </span>
         </div>
       </div>
@@ -307,6 +339,8 @@ const UI = {
     };
     for (const b of p.querySelectorAll('.setOpts button'))
       b.onclick = () => { s.holdMs = Number(b.dataset.ms); Meta.saveSettings(); syncToggles(); };
+    p.querySelector('#stExport').onclick = () => this.showSaveData('export');
+    p.querySelector('#stImport').onclick = () => this.showSaveData('import');
     p.querySelector('#stUpdate').onclick = () => location.reload();
     if (hasRun) this.arm(p.querySelector('#stAbandon'), 'Strike the column?', () => {
       this.clearSave(); G.run = null; G.battle = null; this.showTitle();
@@ -315,7 +349,72 @@ const UI = {
       localStorage.removeItem(Meta.KEY); this.clearSave();
       G.run = null; G.battle = null; Meta.load(); this.showTitle();
     });
-    p.querySelector('#stBack').onclick = backFn;
+    p.querySelector('#stBack').onclick = () => { this.backFn = null; backFn(); };
+  },
+
+  // =================================================================
+  // SAVE DATA — export/import the whole state as portable JSON
+  // =================================================================
+  showSaveData(mode) {
+    const backTo = () => this.showSettings(this.settingsBack || (() => this.showTitle()));
+    this.backFn = backTo;
+    let run = null;
+    try { run = JSON.parse(localStorage.getItem('ironmarch_run_v2')); } catch (e) {}
+    const exporting = mode === 'export';
+    const p = this.overlay(`
+      <h2>${exporting ? 'EXPORT SAVE' : 'IMPORT SAVE'}</h2>
+      <p class="dim small">${exporting
+        ? `Everything the column remembers — meta progress${run ? ', the current run' : ''} and settings. Copy it somewhere safe, or paste it into Import on another device.`
+        : 'Paste an exported save below. It replaces the save on this device.'}</p>
+      <textarea id="svText" class="saveBox" ${exporting ? 'readonly' : ''} spellcheck="false"></textarea>
+      <p id="svStatus" class="small gold">&nbsp;</p>
+      <div class="btnRow">
+        ${exporting
+          ? '<button id="svCopy">Copy to clipboard</button><button id="svFile" class="ghostBtn">Download file</button>'
+          : '<button id="svLoad">Load this save</button>'}
+        <button id="svBack" class="ghostBtn">Back</button>
+      </div>
+    `);
+    const ta = p.querySelector('#svText'), status = p.querySelector('#svStatus');
+
+    if (exporting) {
+      const stamp = new Date();
+      const text = JSON.stringify({
+        game: 'ironmarch', v: 1, exported: stamp.toISOString(),
+        meta: Meta.data, settings: Meta.settings, run,
+      });
+      ta.value = text;
+      p.querySelector('#svCopy').onclick = async () => {
+        try { await navigator.clipboard.writeText(text); }
+        catch (e) { ta.focus(); ta.select(); document.execCommand('copy'); }
+        status.textContent = 'Copied. Paste it somewhere safe.';
+      };
+      p.querySelector('#svFile').onclick = () => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+        a.download = `ironmarch-save-${stamp.toISOString().slice(0, 10)}.json`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+        status.textContent = 'If nothing downloaded, use the clipboard instead.';
+      };
+    } else {
+      p.querySelector('#svLoad').onclick = () => {
+        let o = null;
+        try { o = JSON.parse(ta.value.trim()); } catch (e) {}
+        if (!o || o.game !== 'ironmarch' || !o.meta) {
+          status.textContent = 'That doesn’t read like an Ironmarch save.';
+          return;
+        }
+        Meta.data = Object.assign({ runs: 0, wins: 0, bestAct: 0, unlocked: [] }, o.meta);
+        Meta.save();
+        if (o.settings) { Object.assign(Meta.settings, o.settings); Meta.saveSettings(); }
+        if (o.run) { try { localStorage.setItem('ironmarch_run_v2', JSON.stringify(o.run)); } catch (e) {} }
+        else this.clearSave();
+        G.run = null; G.battle = null;
+        this.showTitle();
+      };
+    }
+    p.querySelector('#svBack').onclick = backTo;
   },
 
   // two-tap confirm for destructive buttons
@@ -340,6 +439,7 @@ const UI = {
   // =================================================================
   showArmory() {
     G.screen = 'armory';
+    this.backFn = () => this.showTitle();
     const have = Meta.pool();
     const p = this.overlay(`
       <h2>THE ARMORY <span class="dim">(${have.length}/${Object.keys(SQUADS).length} requisitioned)</span></h2>

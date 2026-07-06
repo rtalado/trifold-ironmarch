@@ -67,6 +67,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
   if (mode === 'armory') { UI.showArmory(); document.title = errs.length ? 'ERRORS' : 'ARMORY OK'; return; }
   if (mode === 'settings') { UI.showSettings(() => {}); document.title = errs.length ? 'ERRORS' : 'SETTINGS OK'; return; }
+  if (mode === 'export') { UI.showSaveData('export'); document.title = errs.length ? 'ERRORS' : 'EXPORT OK'; return; }
+  if (mode === 'import') { UI.showSaveData('import'); document.title = errs.length ? 'ERRORS' : 'IMPORT OK'; return; }
   if (mode === 'menu') { G.screen = 'map'; UI.showMenu(); document.title = errs.length ? 'ERRORS' : 'MENU OK'; return; }
   if (mode === 'map') {
     Run.start();
