@@ -24,23 +24,58 @@ const UI = {
         wy: (e.clientY - rect.top - offY) / scale,
       };
     };
-    cv.addEventListener('mousemove', e => {
+    // Pointer input. Mouse: hover ghost, click places, right-click unplaces.
+    // Touch: drag shows the ghost, release places, long-press unplaces/cancels.
+    const LP_MS = 450, LP_SLOP = 14;
+    let lpTimer = null, lpFired = false, touchDown = false, downX = 0, downY = 0, lastTouchT = -9999;
+    const stopLP = () => { clearTimeout(lpTimer); lpTimer = null; };
+    const pressField = (b, wx, wy) => {
+      if (b.selected != null) { b.selected = null; this.refreshTray(b); return; }
+      fieldUnplace(b, wx, wy);
+    };
+
+    cv.addEventListener('pointermove', e => {
       const p = toWorld(e);
       Render.mouse.wx = p.wx; Render.mouse.wy = p.wy;
       Render.mouse.over = p.wx > -40 && p.wx < ARENA.w + 40 && p.wy > -40 && p.wy < ARENA.h + 40;
+      if (lpTimer && Math.hypot(e.clientX - downX, e.clientY - downY) > LP_SLOP) stopLP();
     });
-    cv.addEventListener('mouseleave', () => { Render.mouse.over = false; });
+    cv.addEventListener('pointerleave', () => { Render.mouse.over = false; });
+    cv.addEventListener('pointerdown', e => {
+      if (e.pointerType === 'mouse') return;
+      touchDown = true; lpFired = false;
+      downX = e.clientX; downY = e.clientY;
+      const p = toWorld(e);
+      Render.mouse.wx = p.wx; Render.mouse.wy = p.wy; Render.mouse.over = true;
+      stopLP();
+      lpTimer = setTimeout(() => {
+        lpTimer = null; lpFired = true;
+        const b = G.battle; if (!b) return;
+        if (navigator.vibrate) navigator.vibrate(25);
+        pressField(b, p.wx, p.wy);
+      }, LP_MS);
+    });
+    cv.addEventListener('pointerup', e => {
+      if (e.pointerType === 'mouse') return;
+      touchDown = false; lastTouchT = performance.now();
+      stopLP();
+      const b = G.battle;
+      if (!lpFired && b) { const p = toWorld(e); fieldClick(b, p.wx, p.wy); }
+      Render.mouse.over = false;
+    });
+    cv.addEventListener('pointercancel', () => { touchDown = false; stopLP(); Render.mouse.over = false; });
     cv.addEventListener('click', e => {
+      if (performance.now() - lastTouchT < 600) return; // synthesized after touch tap
       const b = G.battle; if (!b) return;
       const p = toWorld(e);
       fieldClick(b, p.wx, p.wy);
     });
     cv.addEventListener('contextmenu', e => {
       e.preventDefault();
+      if (touchDown || lpFired) return; // long-press already handled it
       const b = G.battle; if (!b) return;
-      if (b.selected != null) { b.selected = null; this.refreshTray(b); return; }
       const p = toWorld(e);
-      fieldUnplace(b, p.wx, p.wy);
+      pressField(b, p.wx, p.wy);
     });
     document.addEventListener('keydown', e => {
       const b = G.battle;
@@ -321,15 +356,15 @@ const UI = {
         el.dataset.hotkey = this.trayOrder.length <= 9 ? this.trayOrder.length : '';
         el.onclick = () => this.selectTray(b, i);
       } else if (deployed && b.phase === 'place') {
-        el.title = 'Right-click it on the field to take it back';
+        el.title = 'Right-click (or long-press) it on the field to take it back';
       }
       this.el.tray.appendChild(el);
     });
     const note = document.createElement('div');
     note.className = 'trayNote dim small';
     note.innerHTML = b.phase === 'place'
-      ? 'Click a squad, then click your zone to deploy.<br>Undeployed squads become <b>reserves</b>.'
-      : `Reserves: click a squad, then click your zone to drop it.`;
+      ? 'Pick a squad, then tap your zone to deploy.<br>Undeployed squads become <b>reserves</b>.'
+      : `Reserves: pick a squad, then tap your zone to drop it.`;
     this.el.tray.appendChild(note);
   },
 
