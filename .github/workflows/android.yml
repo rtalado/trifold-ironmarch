@@ -46,7 +46,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp android/app/build/outputs/apk/release/app-release.apk ironmarch.apk
-          gh release create apk --title "Ironmarch — Android APK" \
-            --notes "Latest Android build. Game content updates itself over the air; you only need a new APK if the shell app changes." \
-            2>/dev/null || true
+          gh release create apk --title "Ironmarch — Android APK" --notes placeholder 2>/dev/null || true
           gh release upload apk ironmarch.apk --clobber
+          gh release edit apk \
+            --title "Ironmarch — Android APK (v1.${{ github.run_number }})" \
+            --notes "Shell build **v1.${{ github.run_number }}** — $(date -u '+%Y-%m-%d %H:%M UTC') — commit ${GITHUB_SHA::7}.
+
+          Game content updates itself over the air; you only need a new APK when the shell app changes. Installing over an older version keeps your progress."
