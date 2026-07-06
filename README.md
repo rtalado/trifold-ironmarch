@@ -39,12 +39,28 @@ every sprite and battlefield is painted in code at load time.
 
 **Controls:** click tray squad (or keys 1–9) → click field to place/drop ·
 right-click to unplace or cancel · Space to start the battle / pause · 2× speed.
+**On touch:** tap a tray squad → drag on the field to aim the ghost, release to
+place · long-press to unplace or cancel.
 
 ## Running it
 
 Open `index.html` in any modern browser. That's it.
 (For itch.io: zip the folder — `index.html` at the zip root — and upload as an
 HTML/playable-in-browser project; ~1280×800 viewport or fullscreen.)
+
+**Play online:** <https://rtalado.github.io/trifold-ironmarch/> — it's a PWA:
+it installs to the home screen, plays offline, and picks up pushed updates on
+the next launch.
+
+**Android:** grab `ironmarch.apk` from
+[Releases](https://github.com/rtalado/trifold-ironmarch/releases/latest) —
+a thin WebView shell around the hosted game, built by
+`.github/workflows/android.yml`. Because the game content lives in the PWA
+cache, updates arrive over the air; the APK only needs rebuilding when the
+shell itself changes. Signing keystore lives outside the repo
+(`trifold-ironmarch-signing/`) and in the repo's Actions secrets — don't lose
+it, updates must be signed with the same key. Icons are painted in code:
+`node scripts/make-icons.js`.
 
 `test_battle.html` is a dev harness: `?mode=place&enc=<id>` renders a scripted
 deployment, `?mode=fight&enc=<id>&t=20` a battle in progress, `?mode=map` the run

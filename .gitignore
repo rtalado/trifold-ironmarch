@@ -2,3 +2,9 @@ node_modules/
 dist/
 *.log
 graphify-out/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.p12
+*.keystore

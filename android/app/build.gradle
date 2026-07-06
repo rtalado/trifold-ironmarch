@@ -1,0 +1,36 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'dev.rtalado.ironmarch'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'dev.rtalado.ironmarch'
+        minSdk 24
+        targetSdk 34
+        versionCode Integer.parseInt(System.getenv('VERSION_CODE') ?: '1')
+        versionName System.getenv('VERSION_NAME') ?: '1.0'
+    }
+
+    signingConfigs {
+        release {
+            def ks = System.getenv('KEYSTORE_FILE')
+            if (ks) {
+                storeFile file(ks)
+                storeType 'PKCS12'
+                storePassword System.getenv('KEYSTORE_PASS')
+                keyAlias System.getenv('KEY_ALIAS') ?: 'ironmarch'
+                keyPassword System.getenv('KEYSTORE_PASS')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (System.getenv('KEYSTORE_FILE')) signingConfig signingConfigs.release
+        }
+    }
+}
