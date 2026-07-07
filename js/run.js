@@ -92,14 +92,30 @@ const Run = {
       squads: this.squadOptions(isBoss ? 'boss' : enc.elite ? 'elite' : 'normal'),
       relic: (enc.elite || isBoss) ? this.randomRelic() : null,
       isBoss,
+      round: 1,
+      // a boss fight costs the column dearly — replenish with 3 recruitment
+      // rounds instead of the usual 1
+      rounds: isBoss ? 3 : 1,
     };
     if (reward.relic) r.relics.push(reward.relic);
     UI.showReward(reward);
   },
 
-  afterReward(isBoss) {
+  // rw is the reward object just resolved (card picked, or skipped)
+  afterReward(rw) {
     const r = G.run;
-    if (isBoss) {
+    if (rw.isBoss && rw.round < rw.rounds) {
+      UI.showReward({
+        scrap: 0, lostNames: null,
+        squads: this.squadOptions('boss'),
+        relic: null,
+        isBoss: true,
+        round: rw.round + 1,
+        rounds: rw.rounds,
+      });
+      return;
+    }
+    if (rw.isBoss) {
       r.act++;
       if (r.act >= ACTS.length) {
         Meta.lastUnlocks = Meta.recordRunEnd(true);

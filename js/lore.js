@@ -73,6 +73,64 @@ const LORE = {
   },
 
   // -------------------------------------------------------------------------
+  // The Trifold Obelisks — the war's namesake. Never explained; three
+  // generations of chroniclers have tried. One sits under each act's
+  // stronghold, and each has been shaped by three centuries of what grew
+  // up around it.
+  // -------------------------------------------------------------------------
+  obelisksIntro: [
+    'Three generations of chroniclers have called this the Trifold War without agreeing on what the word means. The surveyors who\'ve actually stood near all three Obelisks have a theory, and they don\'t love it: it means exactly what it sounds like. There are three of them.',
+  ],
+  obelisks: {
+    myriad: { name: 'The Creeplands Obelisk',
+      text: 'Chitin has grown over the stone in overlapping plates, thick as siege armour, and still the shape beneath is unmistakably an Obelisk — a tower the Swarm didn\'t build and cannot stop growing around. The brood-minds don\'t worship it. They don\'t need to. Every drone within a hundred leagues moves like it\'s listening to something the column can\'t hear, and the listening gets worse the closer you get to the Hive.' },
+    choir: { name: 'The Gravewastes Obelisk',
+      text: 'Bone dust has settled into every seam of it, generations deep, until the Obelisk reads less like stone than like a headstone that outgrew the grave. The Choir built the Ossuary Gate around it the way a shrine gets built around a relic — not to contain it, but to be near it. The hymns get louder the closer you stand. Nobody has explained why the dead seem to agree.' },
+    pact: { name: 'The Bloodfields Obelisk',
+      text: 'The stone has gone the colour of an old wound, and the ground around it never quite dries. The Pact didn\'t find their god here — they found this, and decided it would do. The Altar grew up around the Obelisk like scar tissue, tithe by tithe, until it was impossible to say where the monument ended and the shrine began. It has never once answered a question. It has never once stopped taking payment.' },
+  },
+
+  // -------------------------------------------------------------------------
+  // Command staff — the named voices of each playable faction's column.
+  // Flavour only; they don't appear as units or affect anything mechanical.
+  // -------------------------------------------------------------------------
+  staff: {
+    vanguard: [
+      { name: 'Colonel Aldous Rourke', role: 'Commanding Officer',
+        text: 'Commands the column. Doesn\'t talk about winning the war anymore, only about getting the column to the next province intact. Older than his rank suggests; everyone senior enough to outrank him is dead.' },
+      { name: 'Quartermaster Sergeant Nessa Vale', role: 'Logistics',
+        text: 'Keeps the column fed, armed, and barely solvent. Dry, exact, unsentimental about numbers — the only person on staff who can tell you the exact cost of a battle before it\'s fought.' },
+      { name: 'Lieutenant Corin Ashe', role: 'Scout & Intelligence',
+        text: 'Rides ahead with the Outriders. Terse to the point of unsettling. Has seen every province before the column marches into it, and it shows.' },
+    ],
+    syndicate: [
+      { name: 'Underwriter Sable Voss', role: 'Haven Handler',
+        text: 'The Haven\'s man riding with the column. Here to protect the investment, not the province. Talks in premiums, payouts, and severance; quietly the most feared person in camp, because everyone knows exactly what they\'re worth to him.' },
+      { name: 'Captain Idris Rho', role: 'Field Captain',
+        text: 'Leads the mercs on the ground. Fights for the paycheck same as everyone, but the soldiers trust him anyway — he\'s never once let the actuarial tables decide who gets left behind.' },
+    ],
+    warden: [
+      { name: 'Marshal Ada Wallwright', role: 'Banner Officer',
+        text: 'Holds the column to its oaths the way she\'d hold a wall. Doesn\'t inspire with speeches — inspires by being visibly, permanently unmovable.' },
+      { name: 'Master Engineer Bram Kiln', role: 'Siege Engineer',
+        text: 'Designs the siege pieces and reads a battlefield like a quarry survey. Speaks mostly in tonnage, range, and mortar cure-times; apologises to guns that miss.' },
+    ],
+  },
+
+  // -------------------------------------------------------------------------
+  // Campaign ending — shown after the Bloodfields boss falls. Same beat
+  // (the Obelisk outlives the Avatar; the debt isn't over), three voices.
+  // -------------------------------------------------------------------------
+  ending: {
+    vanguard: { title: 'THE ALTAR FALLS',
+      text: 'The Avatar\'s husk cools among the bloodfields. Behind you, three provinces breathe again. But the Obelisk under the Altar hasn\'t stopped humming, and Rourke doesn\'t pretend otherwise in his report: <b>the debt is paid down, not paid off.</b> The Vanguard marches home — fewer, harder, and singing anyway, because that\'s what\'s left to do.' },
+    syndicate: { title: 'THE ALTAR FALLS',
+      text: 'The Avatar defaults on three centuries of debt in one afternoon; Voss actually smiles. But the ledger doesn\'t balance to zero — the Obelisk is still there, still taking, and everyone on staff knows a standing account when they see one. <b>The column banks its win and marches home rich.</b> Voss is already drafting the next contract.' },
+    warden: { title: 'THE ALTAR FALLS',
+      text: 'The Avatar breaks like a wall finally does — all at once, after refusing to for a very long time. Wallwright walks the ground afterward and says nothing; Kiln does the arithmetic nobody asked for and doesn\'t like the answer. <b>The Obelisk still hums under the ruin. What stands, pays.</b> This one\'s still standing.' },
+  },
+
+  // -------------------------------------------------------------------------
   // Units — one or two lines each, in the column's voice.
   // -------------------------------------------------------------------------
   units: {

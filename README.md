@@ -31,6 +31,8 @@ every sprite and battlefield is painted in code at load time.
     a **blood frenzy**; the Avatar waits at the Altar.
 - A branching **node map** per act: battles, elites, events, the Gilded Market,
   field camps (drill/recruit/scavenge), munitions caches, and the act boss.
+  Beating an act boss costs the column dearly, so it comes with 3 recruitment
+  rounds instead of the usual 1 — a real chance to rebuild before the next act.
 - **Your roster is a real army.** Squads persist across battles; a squad wiped in
   combat is struck from the roster permanently. Rewards, shops, camps and events
   recruit new ones. Requisitions (relics) buff the whole column. By default,

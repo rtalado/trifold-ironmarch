@@ -581,7 +581,33 @@ const UI = {
       b.onclick = () => this.showCodexFaction(id);
       list.appendChild(b);
     }
+    const obB = document.createElement('button');
+    obB.textContent = 'The Trifold Obelisks';
+    obB.onclick = () => this.showCodexObelisks();
+    list.appendChild(obB);
     p.querySelector('#cxBack').onclick = () => this.showTitle();
+  },
+
+  showCodexObelisks() {
+    G.screen = 'codex';
+    this.backFn = () => this.showCodex();
+    const p = this.overlay(`
+      <h2>THE TRIFOLD OBELISKS</h2>
+      ${LORE.obelisksIntro.map(t => `<p class="loreText">${t}</p>`).join('')}
+      <div class="loreUnits" id="cxObList"></div>
+      <button id="cxBack" class="ghostBtn" style="margin-top:14px">Back to codex</button>
+    `);
+    const wrap = p.querySelector('#cxObList');
+    for (const id of ['myriad', 'choir', 'pact']) {
+      const ob = LORE.obelisks[id];
+      const row = document.createElement('div');
+      row.className = 'loreUnit';
+      row.insertAdjacentHTML('beforeend',
+        `<div><div class="loreUnitName">${ob.name}</div>
+         <div class="loreUnitText">${ob.text}</div></div>`);
+      wrap.appendChild(row);
+    }
+    p.querySelector('#cxBack').onclick = () => this.showCodex();
   },
 
   showCodexFaction(facId) {
@@ -590,13 +616,27 @@ const UI = {
     const f = LORE.factions[facId];
     const fname = FACTIONS[facId] ? FACTIONS[facId].name : { myriad:'Myriad Swarm', choir:'Ashen Choir', pact:'Obsidian Pact' }[facId];
     const units = Object.keys(UNITS).filter(id => UNITS[id].fac === facId);
+    const staff = LORE.staff[facId];
     const p = this.overlay(`
       <h2>${fname.toUpperCase()}</h2>
       <p class="dim small">${f.kicker}</p>
       ${f.text.map(t => `<p class="loreText">${t}</p>`).join('')}
+      ${staff ? `<p class="gold small" style="margin-top:4px">COMMAND STAFF</p><div class="loreUnits" id="cxStaff"></div>` : ''}
+      ${staff ? `<p class="gold small" style="margin-top:14px">THE ROSTER</p>` : ''}
       <div class="loreUnits" id="cxUnits"></div>
       <button id="cxBack" class="ghostBtn" style="margin-top:14px">Back to codex</button>
     `);
+    if (staff) {
+      const swrap = p.querySelector('#cxStaff');
+      for (const o of staff) {
+        const row = document.createElement('div');
+        row.className = 'loreUnit';
+        row.insertAdjacentHTML('beforeend',
+          `<div><div class="loreUnitName">${o.name} <span class="dim">— ${o.role}</span></div>
+           <div class="loreUnitText">${o.text}</div></div>`);
+        swrap.appendChild(row);
+      }
+    }
     const wrap = p.querySelector('#cxUnits');
     for (const id of units) {
       const row = document.createElement('div');
@@ -972,11 +1012,16 @@ const UI = {
   showReward(rw) {
     G.screen = 'reward';
     const hooks = aggHooks(G.run.relics);
+    const multiRound = rw.isBoss && rw.rounds > 1;
+    const heading = rw.isBoss
+      ? (rw.round === 1 ? 'THE WAY IS CLEAR' : `REINFORCEMENTS ARRIVE (${rw.round}/${rw.rounds})`)
+      : 'FIELD REPORT — VICTORY';
     const p = this.overlay(`
-      <h2>${rw.isBoss ? 'THE WAY IS CLEAR' : 'FIELD REPORT — VICTORY'}</h2>
+      <h2>${heading}</h2>
       ${rw.lostNames && rw.lostNames.length ? `<p class="loss small">Lost in the fighting: ${rw.lostNames.join(', ')}</p>` : ''}
-      <p class="gold">+${rw.scrap} scrap salvaged</p>
+      ${rw.scrap ? `<p class="gold">+${rw.scrap} scrap salvaged</p>` : ''}
       ${rw.relic ? `<p class="relicGain">Requisition secured: <b>${RELICS[rw.relic].name}</b> — ${RELICS[rw.relic].desc}</p>` : ''}
+      ${multiRound && rw.round === 1 ? `<p class="dim small">A boss fight costs the column dearly — recruit ${rw.rounds} squads to replenish the ranks.</p>` : ''}
       <p>Recruit one${hooks.recruitUp ? ' <span class="gold">(drilled — arrives ★)</span>' : ''}:</p>
       <div class="cardRow" id="rwCards"></div>
       <button id="rwSkip" class="ghostBtn">March on without recruiting</button>
@@ -985,10 +1030,10 @@ const UI = {
     for (const id of rw.squads) {
       row.appendChild(this.squadEl(id, {
         up: hooks.recruitUp,
-        onClick: () => { Run.addSquad(id); this.refreshTopBar(); Run.afterReward(rw.isBoss); },
+        onClick: () => { Run.addSquad(id); this.refreshTopBar(); Run.afterReward(rw); },
       }));
     }
-    p.querySelector('#rwSkip').onclick = () => Run.afterReward(rw.isBoss);
+    p.querySelector('#rwSkip').onclick = () => Run.afterReward(rw);
     this.refreshTopBar();
   },
 
@@ -1157,10 +1202,11 @@ const UI = {
 
   showVictory() {
     this.clearSave();
+    const fac = FACTIONS[G.run && G.run.fac] ? G.run.fac : 'vanguard';
+    const end = LORE.ending[fac];
     const p = this.overlay(`
-      <h2 class="win">THE ALTAR FALLS</h2>
-      <p class="evText">The Avatar's husk cools among the bloodfields. Behind you, three provinces breathe again.<br>
-      The Vanguard marches home — fewer, harder, and singing.</p>
+      <h2 class="win">${end.title}</h2>
+      <p class="evText">${end.text}</p>
       <div id="unlockList"></div>
       <button id="goTitle">Return to the muster</button>
     `);

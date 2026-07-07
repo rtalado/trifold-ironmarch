@@ -82,6 +82,8 @@ window.addEventListener('DOMContentLoaded', () => {
   if (mode === 'facselect') { UI.showFactionSelect(); document.title = errs.length ? 'ERRORS' : 'FACSELECT OK'; return; }
   if (mode === 'codex') { UI.showCodex(); document.title = errs.length ? 'ERRORS' : 'CODEX OK'; return; }
   if (mode === 'codexfac') { UI.showCodexFaction(q.get('fac') || 'syndicate'); document.title = errs.length ? 'ERRORS' : 'CODEXFAC OK'; return; }
+  if (mode === 'codexobelisks') { UI.showCodexObelisks(); document.title = errs.length ? 'ERRORS' : 'CODEXOBELISKS OK'; return; }
+  if (mode === 'victory') { UI.showVictory(); document.title = errs.length ? 'ERRORS' : 'VICTORY OK'; return; }
   if (mode === 'settings') { UI.showSettings(() => {}); document.title = errs.length ? 'ERRORS' : 'SETTINGS OK'; return; }
   if (mode === 'export') { UI.showSaveData('export'); document.title = errs.length ? 'ERRORS' : 'EXPORT OK'; return; }
   if (mode === 'import') { UI.showSaveData('import'); document.title = errs.length ? 'ERRORS' : 'IMPORT OK'; return; }

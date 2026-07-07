@@ -319,8 +319,8 @@ const EVENTS = [
       { label:'Rally the survivors', result:{squad:'basic'}, note:'Gain a basic squad' },
       { label:'Take their battle plans', result:{squad:'uncommon'}, note:'Gain an uncommon squad' },
     ]},
-  { id:'obelisk', title:'The Silent Obelisk',
-    text:'A lone obelisk hums beside the road, untouched by the war. Your engineers could tap it — or your chaplains could read it.',
+  { id:'obelisk', title:'The Broken Obelisk',
+    text:'A chunk of standing stone leans by the roadside, small enough to have fallen off something much larger, long enough ago that moss has claimed the fracture. It isn\'t one of the three the column marches toward — the surveyors are certain of that much — but the animals still won\'t go near it, and neither, this close, do your engineers really want to.',
     choices:[
       { label:'Tap it for the war effort', result:{scrap:50}, note:'+50 scrap' },
       { label:'Read the warnings', result:{relic:true}, note:'Gain a random requisition' },
