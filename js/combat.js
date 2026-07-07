@@ -48,14 +48,14 @@ function fieldClick(b, wx, wy) {
   if (!validPlace(b, p.x, p.y, entry.id)) { UI.hint('Deploy inside your zone — clear of crags and the HQ'); return; }
 
   if (b.phase === 'place') {
-    const squad = spawnSquad(b, 'player', entry.id, p.x, p.y, entry.up, i, b.stance === 'hold');
+    const squad = spawnSquad(b, 'player', entry.id, p.x, p.y, entry.up, i, b.stance);
     b.deployed[i] = true;
     b.selected = null;
     b.fx.push({ kind: 'deploy', x: p.x, y: p.y, ttl: 0.5 });
   } else if (b.phase === 'fight' && !b.over) {
     if (b.reserveLeft <= 0) { UI.hint('No reserve drops left'); return; }
     if (b.reserveCdT > 0) { UI.hint('Reserves recharging…'); return; }
-    spawnSquad(b, 'player', entry.id, p.x, p.y, entry.up, i, b.stance === 'hold');
+    spawnSquad(b, 'player', entry.id, p.x, p.y, entry.up, i, b.stance);
     b.deployed[i] = true;
     b.selected = null;
     b.reserveLeft--;

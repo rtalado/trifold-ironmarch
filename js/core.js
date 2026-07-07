@@ -3,6 +3,10 @@
 // ============================================================================
 'use strict';
 
+// Bump on every player-facing change — shown bottom-right on the title screen
+// so players (and app owners chasing OTA delivery) can confirm they're current.
+const GAME_VERSION = '1.2.0';
+
 const G = {
   screen: 'title',       // title | map | battle | reward | shop | rest | event | gameover | victory | roster
   run: null,

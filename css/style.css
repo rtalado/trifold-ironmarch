@@ -63,6 +63,10 @@ button:disabled { opacity: 0.4; cursor: default; }
 }
 #titleCanvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .titleInner { text-align: center; position: relative; z-index: 1; padding: 0 16px; }
+.versionTag {
+  position: absolute; right: calc(10px + env(safe-area-inset-right)); bottom: calc(8px + env(safe-area-inset-bottom));
+  z-index: 1; font-size: 11px; letter-spacing: 0.05em; color: var(--dim); opacity: 0.7;
+}
 .titleKicker { letter-spacing: clamp(0.24em, 1.4vw, 0.55em); color: var(--dim); font-size: clamp(11px, 3vw, 13px); }
 .titleName {
   font-size: clamp(36px, 10.5vw, 92px); font-weight: normal;
@@ -125,8 +129,11 @@ button:disabled { opacity: 0.4; cursor: default; }
 .fightBtn:hover { background: #d8b45a1a; }
 .speedBox button { padding: 4px 10px; font-size: 12px; }
 .speedBox .on { border-color: var(--gold); color: var(--gold); }
-.stanceBtn { font-size: 12px; padding: 8px 14px; letter-spacing: 0.08em; }
-.stanceBtn.on { border-color: var(--blue); color: var(--blue); box-shadow: 0 0 12px #6fb3e822; }
+.stanceBox { display: flex; gap: 4px; }
+.stanceBtn { font-size: 11px; padding: 7px 10px; letter-spacing: 0.05em; }
+#stnAdvance.on { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 12px #d8b45a22; }
+#stnHold.on { border-color: var(--blue); color: var(--blue); box-shadow: 0 0 12px #6fb3e822; }
+#stnFallback.on { border-color: #e8a34a; color: #e8a34a; box-shadow: 0 0 12px #e8a34a22; }
 #reserveSquads { font-size: 11px; }
 #reserveBox .hpLabel { margin-bottom: 2px; }
 .reserveTrack { height: 5px; width: 110px; background: #000a; border: 1px solid #2c3040; }

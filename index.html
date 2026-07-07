@@ -31,6 +31,7 @@
     </div>
     <p id="titleStats" class="dim"></p>
   </div>
+  <div id="versionTag" class="versionTag"></div>
 </div>
 
 <!-- ======================= MAP ======================= -->
@@ -64,7 +65,11 @@
       <div class="hpTrack"><div id="coreFill" class="hpFill red"></div></div>
     </div>
     <div class="battleCtl">
-      <button id="btnStance" class="stanceBtn" title="Order everyone to hold or advance">⚑ ADVANCE</button>
+      <div id="stanceBox" class="stanceBox">
+        <button id="stnAdvance" class="stanceBtn on">⚑ ADVANCE</button>
+        <button id="stnHold" class="stanceBtn">⛨ HOLD</button>
+        <button id="stnFallback" class="stanceBtn">↩ FALLBACK</button>
+      </div>
       <button id="btnFight" class="fightBtn">⚔ SOUND THE ADVANCE</button>
       <div id="speedBox" class="speedBox hidden">
         <button id="spd0">❚❚</button><button id="spd1" class="on">1×</button><button id="spd2">2×</button>

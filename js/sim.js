@@ -30,7 +30,8 @@ function newBattle(encId, run) {
     shake: 0, phase: 'place',        // place | fight
     wiped: [],                       // roster indices lost this battle
     lastStandUsed: false,
-    stance: 'advance',               // stance applied to the NEXT squad placed: 'advance' | 'hold'
+    stance: 'advance',               // standing order: 'advance' | 'hold' | 'fallback' — applies to every
+                                      // squad on the field live, and to the next one placed/dropped
     nextWave: 35,
     reserveLeft: ECON.reserveDrops + hooks.reserveAdd,
     reserveCdT: 0,
@@ -105,12 +106,12 @@ function makeModel(b, side, unitId, x, y, umod, squad, hpFrac) {
 // One roster squad → `models` entities in a small cluster around (x,y).
 // Brutal Mode: a roster entry that fought and survived a previous battle
 // carries a `dmg` record ({alive, hpFrac}) — respawn it wounded instead of fresh.
-function spawnSquad(b, side, unitId, x, y, up, rosterIdx, hold) {
+function spawnSquad(b, side, unitId, x, y, up, rosterIdx, stance) {
   const u = UNITS[unitId];
   const entry = side === 'player' && rosterIdx != null ? b.run.roster[rosterIdx] : null;
   const persisted = entry && entry.dmg;
   const n = persisted ? clamp(persisted.alive, 1, u.models) : u.models;
-  const squad = { side, unitId, rosterIdx: rosterIdx == null ? null : rosterIdx, alive: n, up: !!up, hold: !!hold };
+  const squad = { side, unitId, rosterIdx: rosterIdx == null ? null : rosterIdx, alive: n, up: !!up, stance: stance || 'advance' };
   b.squads.push(squad);
   const umod = up ? { hpM: 1.3, dmgM: 1.3 } : null;
   const hpFrac = persisted ? clamp(persisted.hpFrac, 0.15, 1) : null;
@@ -474,9 +475,15 @@ function simTick(b, dt) {
         if (wounded) { gx = wounded.x; gy = wounded.y;
           if (dist2(e.x, e.y, gx, gy) < (e.healRng * 0.6) ** 2) continue; }
         else continue;
-      } else if (e.side === 'player' && e.squad && e.squad.hold && !tooClose) {
+      } else if (e.side === 'player' && e.squad && e.squad.stance === 'hold' && !tooClose) {
         // Hold stance: stand your ground — only fall back if something got inside min range.
         gx = e.x; gy = e.y;
+      } else if (e.side === 'player' && e.squad && e.squad.stance === 'fallback' && !tooClose) {
+        // Fallback stance: retreat to a rally line behind the HQ (and behind any forward
+        // emplacements) and hold there, regrouping instead of chasing the fight.
+        const rx = clamp(b.hq.x + 110, 30, ARENA.deployW - 30);
+        gx = Math.abs(e.x - rx) < 26 ? e.x : rx;
+        gy = e.y;
       }
       if (tooClose) back = true;
       const spd = effSpd(b, e);

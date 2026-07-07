@@ -168,7 +168,9 @@ const UI = {
     on('btnMenuMap', () => this.showMenu());
     on('btnMenuBattle', () => this.showMenu());
     on('btnFight', () => { const b = G.battle; if (b) beginFight(b); });
-    on('btnStance', () => this.toggleStance());
+    on('stnAdvance', () => this.setStance('advance'));
+    on('stnHold', () => this.setStance('hold'));
+    on('stnFallback', () => this.setStance('fallback'));
     on('btnAbility', () => this.toggleAbility());
     for (const s of [0, 1, 2]) {
       document.getElementById('spd' + s).onclick = () => { G.speed = s === 0 ? 0 : s; this.syncSpeed(); };
@@ -204,6 +206,7 @@ const UI = {
       d.runs === 0 ? 'The column awaits its first order.' :
       `Marches: ${d.runs} · Victories: ${d.wins} · Squads unlocked: ${d.unlocked.length}/${META_UNLOCKS.reduce((n, u) => n + u.squads.length, 0)}`;
     document.getElementById('btnResume').classList.toggle('hidden', !localStorage.getItem('ironmarch_run_v2'));
+    document.getElementById('versionTag').textContent = 'v' + GAME_VERSION;
   },
 
   // =================================================================
@@ -787,25 +790,28 @@ const UI = {
     for (const s of [0, 1, 2]) document.getElementById('spd' + s).classList.toggle('on', (s === 0 ? 0 : s) === G.speed);
   },
 
-  // ---------------- stance (advance vs hold position) ----------------
-  // Sets the stance for the NEXT squad placed/dropped, and is also a live
-  // order: every squad already on the field switches immediately too.
-  toggleStance() {
-    const b = G.battle; if (!b) return;
-    b.stance = b.stance === 'hold' ? 'advance' : 'hold';
-    const hold = b.stance === 'hold';
-    for (const squad of b.squads) if (squad.side === 'player') squad.hold = hold;
+  // ---------------- stance: advance / hold / fallback ----------------
+  // A standing order: sets the stance new placements/reserve-drops arrive in,
+  // and is also a live command — every squad already on the field switches
+  // immediately too.
+  STANCES: {
+    advance:  { btn: 'stnAdvance',  title: 'Everyone advances and seeks the enemy — new squads too' },
+    hold:     { btn: 'stnHold',     title: 'Everyone holds their ground and defends where placed — new squads too' },
+    fallback: { btn: 'stnFallback', title: 'Everyone falls back to regroup behind the HQ (and any forward emplacements) — new squads too' },
+  },
+  setStance(name) {
+    const b = G.battle; if (!b || !this.STANCES[name]) return;
+    b.stance = name;
+    for (const squad of b.squads) if (squad.side === 'player') squad.stance = name;
     this.syncStance(b);
   },
   syncStance(b) {
-    const btn = document.getElementById('btnStance');
-    if (!btn) return;
-    const hold = b.stance === 'hold';
-    btn.textContent = hold ? '⛨ HOLD' : '⚑ ADVANCE';
-    btn.classList.toggle('on', hold);
-    btn.title = hold
-      ? 'Everyone holds their ground and defends where placed — new squads too'
-      : 'Everyone advances and seeks the enemy — new squads too';
+    for (const [name, s] of Object.entries(this.STANCES)) {
+      const btn = document.getElementById(s.btn);
+      if (!btn) continue;
+      btn.classList.toggle('on', b.stance === name);
+      btn.title = s.title;
+    }
   },
 
   refreshBattleHUD(b) {
@@ -868,8 +874,8 @@ const UI = {
     note.className = 'trayNote dim small';
     const reserveCount = this.trayOrder.length;
     note.innerHTML = b.phase === 'place'
-      ? `Pick a squad, then tap your zone to deploy.<br>Undeployed squads become <b>reserves</b> (currently <b>${reserveCount}</b>). Toggle <b>stance</b> to hold a defensive line.`
-      : `Reserves: pick a squad, then tap your zone to drop it. <b>${reserveCount}</b> left to call in.<br>Toggle <b>stance</b> to hold position instead of advancing.`;
+      ? `Pick a squad, then tap your zone to deploy.<br>Undeployed squads become <b>reserves</b> (currently <b>${reserveCount}</b>). Use <b>stance</b> to hold a defensive line or fall back.`
+      : `Reserves: pick a squad, then tap your zone to drop it. <b>${reserveCount}</b> left to call in.<br>Use <b>stance</b> to hold, fall back, or advance — it commands everyone already on the field too.`;
     this.el.tray.appendChild(note);
   },
 

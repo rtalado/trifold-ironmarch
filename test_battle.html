@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<div id="title" class="screen hidden"><button id="btnStart"></button><button id="btnResume"></button><p id="titleStats"></p></div>
+<div id="title" class="screen hidden"><button id="btnStart"></button><button id="btnResume"></button><p id="titleStats"></p><div id="versionTag"></div></div>
 <div id="map" class="screen hidden">
   <div class="topBar"><div><div id="mapActName" class="actName"></div><div id="mapBlurb" class="dim small"></div></div>
   <div class="topStats"><span id="barScrap" class="stat gold"></span><span id="barRoster" class="stat"></span><span id="barRelics"></span><button id="btnRosterMap">THE COLUMN</button></div></div>
@@ -18,10 +18,15 @@
     <div id="encName" class="encName"></div>
     <div class="hpBlock right"><div class="hpLabel"><span id="coreNum"></span> ENEMY CORE</div><div class="hpTrack"><div id="coreFill" class="hpFill red"></div></div></div>
     <div class="battleCtl">
-      <button id="btnStance" class="stanceBtn">⚑ ADVANCE</button>
+      <div id="stanceBox" class="stanceBox">
+        <button id="stnAdvance" class="stanceBtn on">⚑ ADVANCE</button>
+        <button id="stnHold" class="stanceBtn">⛨ HOLD</button>
+        <button id="stnFallback" class="stanceBtn">↩ FALLBACK</button>
+      </div>
       <button id="btnFight" class="fightBtn">⚔ SOUND THE ADVANCE</button>
       <div id="speedBox" class="speedBox hidden"><button id="spd0">❚❚</button><button id="spd1" class="on">1×</button><button id="spd2">2×</button></div>
       <div id="reserveBox" class="hidden"><div class="hpLabel">RESERVE DROPS <span id="reserveNum"></span> <span id="reserveSquads" class="dim"></span></div><div class="reserveTrack"><div id="reserveFill"></div></div></div>
+      <div id="abilityBox" class="hidden"><button id="btnAbility" class="abilityBtn"></button><div class="reserveTrack"><div id="abilityFill"></div></div></div>
     </div>
   </div>
   <div class="canvasWrap"><canvas id="battleCanvas"></canvas><div id="phaseBanner"></div><div id="hintBanner" class="hidden"></div></div>
