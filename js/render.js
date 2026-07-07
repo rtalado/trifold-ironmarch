@@ -27,7 +27,10 @@ const Render = {
   resize() {
     const r = this.cv.getBoundingClientRect();
     if (!r.width) return;
-    this.dpr = window.devicePixelRatio || 1;
+    // Cap the backing store at 2x — a 3x/4x phone doesn't need that many extra
+    // pixels redrawn every frame, and it's real battery/frame-rate cost for
+    // no visible gain on a canvas this busy.
+    this.dpr = Math.min(window.devicePixelRatio || 1, 2);
     this.cv.width = Math.round(r.width * this.dpr);
     this.cv.height = Math.round(r.height * this.dpr);
     this.clampCam();

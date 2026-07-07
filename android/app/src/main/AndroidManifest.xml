@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Lets navigator.vibrate() work in the WebView — the game's haptics
+         setting is otherwise a silent no-op inside the shell. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
     <application
         android:label="Ironmarch"
         android:icon="@mipmap/ic_launcher"

@@ -33,7 +33,14 @@ canvas { touch-action: none; }
 .small { font-size: 12px; }
 .gold { color: var(--gold); }
 
-.screen { position: absolute; inset: 0; display: flex; flex-direction: column; }
+/* Canvases inside a screen are position:absolute/inset:0 so they still bleed
+   full-bleed under a notch/home-indicator; normal-flow chrome (bars, tray,
+   buttons) sits inside this padding and stays clear of it. */
+.screen {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
 
 button {
   font-family: var(--serif);
@@ -64,7 +71,8 @@ button:disabled { opacity: 0.4; cursor: default; }
 #titleCanvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .titleInner { text-align: center; position: relative; z-index: 1; padding: 0 16px; }
 .versionTag {
-  position: absolute; right: calc(10px + env(safe-area-inset-right)); bottom: calc(8px + env(safe-area-inset-bottom));
+  /* #title (a .screen) already pads in by the safe area, so plain offsets are enough here */
+  position: absolute; right: 10px; bottom: 8px;
   z-index: 1; font-size: 11px; letter-spacing: 0.05em; color: var(--dim); opacity: 0.7;
 }
 .titleKicker { letter-spacing: clamp(0.24em, 1.4vw, 0.55em); color: var(--dim); font-size: clamp(11px, 3vw, 13px); }
@@ -339,7 +347,6 @@ button.armed { border-color: var(--blood); color: var(--blood); }
   .card.small { width: 108px; }
   .card.small .cardArt { height: 54px; }
   .titleName { font-size: clamp(34px, 9vh, 54px); }
-  body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
 }
 
 /* Portrait phones: stack the battle HUD, wrap the bars */

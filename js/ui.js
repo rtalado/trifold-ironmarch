@@ -158,6 +158,13 @@ const UI = {
       });
     }
 
+    // The OS releases the wake lock whenever the tab is hidden (app switch,
+    // screen lock) — grab it back if we return mid-fight.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && G.screen === 'battle' &&
+          G.battle && G.battle.phase === 'fight' && !G.battle.over) this.acquireWakeLock();
+    });
+
     const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
     on('btnStart', () => this.showFactionSelect());
     on('btnResume', () => this.resumeRun());
@@ -180,6 +187,23 @@ const UI = {
   show(name) {
     for (const id of ['title','map','battle','overlay']) this.el[id].classList.toggle('hidden', id !== name);
     if (name !== 'title') this.armBack();
+    // Only worth keeping the screen awake while a fight is actually running and
+    // visible — leaving battle (pause menu, reward, map, title...) releases it.
+    if (name === 'battle' && G.battle && G.battle.phase === 'fight' && !G.battle.over) this.acquireWakeLock();
+    else this.releaseWakeLock();
+  },
+
+  // ---------------- screen wake lock (don't let the screen dim mid-fight) ----------------
+  wakeLock: null,
+  async acquireWakeLock() {
+    if (!('wakeLock' in navigator) || this.wakeLock) return;
+    try {
+      this.wakeLock = await navigator.wakeLock.request('screen');
+      this.wakeLock.addEventListener('release', () => { this.wakeLock = null; });
+    } catch (e) { this.wakeLock = null; }
+  },
+  releaseWakeLock() {
+    if (this.wakeLock) { this.wakeLock.release().catch(() => {}); this.wakeLock = null; }
   },
 
   // ---------------- system back integration ----------------
@@ -218,7 +242,7 @@ const UI = {
     if (!cv) return;
     const r = cv.getBoundingClientRect();
     if (!r.width) return;
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = Math.round(r.width * dpr), h = Math.round(r.height * dpr);
     if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; this.titleBg = null; }
     const g = cv.getContext('2d');
@@ -603,7 +627,7 @@ const UI = {
 
     const cv = this.el.mapCv;
     const cssW = cv.clientWidth || 900, cssH = cv.clientHeight || 520;
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     cv.width = Math.round(cssW * dpr); cv.height = Math.round(cssH * dpr);
     const g = cv.getContext('2d');
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -784,6 +808,7 @@ const UI = {
     document.getElementById('abilityBox').classList.toggle('hidden', !b.ability);
     this.refreshTray(b);
     this.refreshBattleHUD(b);
+    this.acquireWakeLock();
   },
 
   syncSpeed() {
