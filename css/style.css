@@ -132,6 +132,11 @@ button:disabled { opacity: 0.4; cursor: default; }
 .reserveTrack { height: 5px; width: 110px; background: #000a; border: 1px solid #2c3040; }
 #reserveFill { height: 100%; background: var(--gold); }
 #reserveNum { color: var(--gold); }
+.abilityBtn { font-size: 11px; padding: 8px 12px; letter-spacing: 0.06em; }
+.abilityBtn.armed { border-color: #e8635a; color: #e8635a; box-shadow: 0 0 12px #e8635a33; }
+.abilityBtn:disabled { opacity: 0.4; cursor: default; }
+#abilityBox .hpLabel { margin-bottom: 2px; }
+#abilityFill { height: 100%; background: #e8635a; }
 
 .canvasWrap { position: relative; flex: 1; min-height: 0; display: flex; }
 #battleCanvas {
@@ -164,10 +169,8 @@ button:disabled { opacity: 0.4; cursor: default; }
 }
 @media (hover: hover) {
   .chip:hover { transform: translateY(-4px); border-color: #8b93a8; z-index: 5; }
-  .chip.deployed:hover { transform: none; border-color: var(--line); }
 }
 .chip.selected { border-color: var(--gold); box-shadow: 0 0 16px #d8b45a44; transform: translateY(-4px); }
-.chip.deployed { opacity: 0.42; cursor: default; }
 .chip.wiped { opacity: 0.25; cursor: default; filter: grayscale(1); }
 .chip.wiped::after {
   content: 'WIPED'; position: absolute; inset: auto 0 40%;
@@ -258,6 +261,12 @@ button.armed { border-color: var(--blood); color: var(--blood); }
 .setOpts { display: flex; gap: 6px; }
 .setRow button.on { border-color: var(--gold); color: var(--gold); }
 /* faction select */
+.brutalToggle {
+  display: block; max-width: 520px; margin: 14px auto 0; text-align: left;
+  font-size: 12px; line-height: 1.5; color: #98a0b4; cursor: pointer;
+}
+.brutalToggle b { color: var(--blood); }
+.brutalToggle input { vertical-align: middle; margin-right: 4px; }
 .facRow { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin: 16px 0 18px; }
 .facCard {
   width: min(260px, 86vw); text-align: left; cursor: pointer;

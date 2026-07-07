@@ -34,6 +34,12 @@ function snapGrid(x, y) {
 
 // Click on the field during placement (or during battle with a reserve armed).
 function fieldClick(b, wx, wy) {
+  if (b.abilityArmed) {
+    b.abilityArmed = false;
+    if (!triggerAbility(b, wx, wy)) UI.hint('Artillery support unavailable');
+    UI.refreshBattleHUD(b);
+    return;
+  }
   if (b.selected == null) return;
   const i = b.selected;
   const entry = G.run.roster[i];
@@ -111,6 +117,19 @@ function finishBattle(b) {
   // permadeath: strike wiped squads from the roster (indices descending)
   const lost = [...new Set(b.wiped)].sort((a, z) => z - a);
   const lostNames = lost.map(i => squadName(run.roster[i]));
+
+  // Brutal Mode: surviving squads carry their remaining models/HP into the next
+  // battle instead of healing up fully. Off by default — see FACTIONS/Run.start.
+  for (const squad of b.squads) {
+    if (squad.side !== 'player' || squad.rosterIdx == null || lost.includes(squad.rosterIdx)) continue;
+    const entry = run.roster[squad.rosterIdx]; if (!entry) continue;
+    if (!run.brutal) { delete entry.dmg; continue; }
+    const ents = b.ents.filter(e => e.squad === squad && !e.dead);
+    if (!ents.length) continue;
+    const totalHp = ents.reduce((s, e) => s + e.hp, 0);
+    const totalMax = ents.reduce((s, e) => s + e.maxhp, 0);
+    entry.dmg = { alive: ents.length, hpFrac: clamp(totalHp / totalMax, 0.01, 1) };
+  }
   // Syndicate severance: wiped squads refund part of their price (before the splice)
   let severance = 0;
   if (b.fpk.severance) {

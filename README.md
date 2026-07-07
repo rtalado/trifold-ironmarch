@@ -9,8 +9,10 @@ the battle resolve. Squads that get wiped are **gone forever**.
 - **The Vanguard** — combined arms, the widest arsenal (the baseline).
 - **Gilded Syndicate** — mercenary economics: kill bounties pay scrap on
   victory, wiped squads refund part of their price (severance).
-- **Warden Covenant** — turtle and tech: emplacements get +25% HP and pay
-  masonry rent after every battle they survive.
+- **Warden Covenant** — turtle and tech: emplacements get +45% HP and pay
+  masonry rent after every battle they survive, living squads run +12% HP
+  faction-wide, and their commander can call in Worldbreaker Artillery
+  Support — an off-map barrage on any point on the field.
 
 The **Codex** on the title screen carries the war's lore — every faction and
 every unit (see `js/lore.js`; the faction designs follow the guides in
@@ -31,7 +33,10 @@ every sprite and battlefield is painted in code at load time.
   field camps (drill/recruit/scavenge), munitions caches, and the act boss.
 - **Your roster is a real army.** Squads persist across battles; a squad wiped in
   combat is struck from the roster permanently. Rewards, shops, camps and events
-  recruit new ones. Requisitions (relics) buff the whole column.
+  recruit new ones. Requisitions (relics) buff the whole column. By default,
+  any squad that survives a battle starts the next one at full strength —
+  toggle **Brutal Mode** at faction select and surviving squads carry their
+  wounds (lost models, missing HP) forward instead.
 - Meta-unlocks add squad types to the pool across runs (up to The Ratte).
 
 ## The battles
@@ -55,11 +60,13 @@ place · long-press to unplace or cancel · pinch to zoom, one-finger drag to pa
 Portrait and landscape both work; portrait opens zoomed on your deployment zone.
 The ☰ button (map & battle) opens the pause menu with settings.
 
-**Stance:** the ADVANCE/HOLD toggle next to the fight button sets the stance for
-the *next* squad you place (or reserve-drop). ADVANCE squads seek and engage
-the enemy as usual; HOLD squads stand their ground and only fire at whatever
-comes into range — pair them with turrets/emplacements for a real defensive
-line instead of everyone rushing forward. Held squads show a dashed ring.
+**Stance:** the ADVANCE/HOLD toggle next to the fight button is a standing order
+— it switches every squad you already have on the field immediately, and sets
+the stance new placements/reserve-drops arrive in. ADVANCE squads seek and
+engage the enemy as usual; HOLD squads stand their ground and only fire at
+whatever comes into range — pair them with turrets/emplacements for a real
+defensive line instead of everyone rushing forward. Held squads show a dashed
+ring.
 
 **Reserves:** squads left undeployed at "Sound the Advance" become reserves —
 drop them mid-fight from the tray (2 drops by default, on a cooldown). The

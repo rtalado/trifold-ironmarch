@@ -152,6 +152,21 @@ const Render = {
       }
     }
 
+    // ---- army-ability targeting reticle ----
+    if (b.abilityArmed && this.mouse.over) {
+      const ab = b.ability;
+      const mx = clamp(this.mouse.wx, 0, W), my = clamp(this.mouse.wy, 0, H);
+      g.strokeStyle = '#e8635acc'; g.lineWidth = 2; g.setLineDash([8, 6]);
+      g.beginPath(); g.arc(mx, my, ab.radius, 0, 7); g.stroke(); g.setLineDash([]);
+      g.strokeStyle = '#e8635a55'; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(mx - 14, my); g.lineTo(mx + 14, my);
+      g.moveTo(mx, my - 14); g.lineTo(mx, my + 14); g.stroke();
+      g.fillStyle = '#e8635add';
+      g.font = 'bold 11px Georgia, serif'; g.textAlign = 'center';
+      g.fillText('ARTILLERY', mx, my - ab.radius - 10);
+      g.textAlign = 'left';
+    }
+
     // ---- fx ----
     for (const f of b.fx) this.drawFx(g, b, f, t);
     g.restore();
@@ -308,6 +323,21 @@ const Render = {
         g.fillStyle = `rgba(216,180,90,${k})`; g.font = 'bold 13px serif'; g.textAlign = 'center';
         g.fillText(`+${f.amt}⚙`, f.x, f.y - (1 - k) * 26 - 8);
         g.textAlign = 'left';
+        break;
+      }
+      case 'barrageMark': {
+        g.strokeStyle = '#e8635a99'; g.lineWidth = 2; g.setLineDash([10, 7]);
+        g.beginPath(); g.arc(f.x, f.y, f.r, 0, 7); g.stroke(); g.setLineDash([]);
+        glowDot(g, `rgba(232,99,90,${0.15 + 0.15 * Math.sin(t * 12)})`, f.x, f.y, f.r * 0.15);
+        break;
+      }
+      case 'barrageImpact': {
+        const k = 1 - clamp(f.ttl / 0.6, 0, 1);
+        glowDot(g, `rgba(255,180,90,${(1 - k) * 0.8})`, f.x, f.y, f.r * (0.3 + k * 0.7));
+        g.strokeStyle = `rgba(255,210,122,${(1 - k) * 0.9})`; g.lineWidth = 3;
+        g.beginPath(); g.arc(f.x, f.y, f.r * k, 0, 7); g.stroke();
+        g.fillStyle = `rgba(20,14,10,${(1 - k) * 0.5})`;
+        g.beginPath(); g.arc(f.x, f.y, f.r * 0.6 * k, 0, 7); g.fill();
         break;
       }
       case 'waveWarn': break; // drawn in the screen-space pass

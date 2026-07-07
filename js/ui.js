@@ -25,6 +25,7 @@ const UI = {
     let downX = 0, downY = 0, panning = false, pinch = null, gestureT = -9999, lastTouchT = -9999;
     const stopLP = () => { clearTimeout(lpTimer); lpTimer = null; };
     const pressField = (b, wx, wy) => {
+      if (b.abilityArmed) { b.abilityArmed = false; this.refreshBattleHUD(b); return; }
       if (b.selected != null) { b.selected = null; this.refreshTray(b); return; }
       fieldUnplace(b, wx, wy);
     };
@@ -120,12 +121,13 @@ const UI = {
       pressField(b, p.wx, p.wy);
     });
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && (G.screen === 'menu' || ((G.screen === 'map' || G.screen === 'battle') && !(G.battle && G.battle.selected != null)))) {
+      if (e.key === 'Escape' && (G.screen === 'menu' || ((G.screen === 'map' || G.screen === 'battle') && !(G.battle && (G.battle.selected != null || G.battle.abilityArmed))))) {
         this.toggleMenu();
         return;
       }
       const b = G.battle;
       if (!b) return;
+      if (e.key === 'Escape' && b.abilityArmed) { b.abilityArmed = false; this.refreshBattleHUD(b); }
       if (e.key === 'Escape' && b.selected != null) { b.selected = null; this.refreshTray(b); }
       if (e.key === ' ' && G.screen === 'battle') {
         e.preventDefault();
@@ -167,6 +169,7 @@ const UI = {
     on('btnMenuBattle', () => this.showMenu());
     on('btnFight', () => { const b = G.battle; if (b) beginFight(b); });
     on('btnStance', () => this.toggleStance());
+    on('btnAbility', () => this.toggleAbility());
     for (const s of [0, 1, 2]) {
       document.getElementById('spd' + s).onclick = () => { G.speed = s === 0 ? 0 : s; this.syncSpeed(); };
     }
@@ -501,10 +504,12 @@ const UI = {
     const p = this.overlay(`
       <h2>WHO MARCHES EAST?</h2>
       <p class="dim small">Each faction musters its own squads and fights the same war its own way.</p>
+      <label class="brutalToggle"><input type="checkbox" id="fsBrutal"> <b>Brutal Mode</b> — squads that survive a battle carry their wounds into the next one instead of healing up fully.</label>
       <div id="facRow" class="facRow"></div>
       <button id="fsBack" class="ghostBtn">Back</button>
     `);
     const row = p.querySelector('#facRow');
+    const brutalBox = p.querySelector('#fsBrutal');
     for (const [id, f] of Object.entries(FACTIONS)) {
       const el = document.createElement('div');
       el.className = 'facCard';
@@ -522,7 +527,7 @@ const UI = {
         <ul class="facPerks">${f.perks.map(x => `<li>${x}</li>`).join('')}</ul>
         <div class="facStart dim small">Musters: ${f.start.map(u => UNITS[u].name).join(', ')}</div>
       `);
-      el.onclick = () => { this.clearSave(); Run.start(id); };
+      el.onclick = () => { this.clearSave(); Run.start(id, brutalBox.checked); };
       row.appendChild(el);
     }
     p.querySelector('#fsBack').onclick = () => this.showTitle();
@@ -763,6 +768,7 @@ const UI = {
     document.getElementById('btnFight').classList.remove('hidden');
     document.getElementById('speedBox').classList.add('hidden');
     document.getElementById('reserveBox').classList.add('hidden');
+    document.getElementById('abilityBox').classList.add('hidden');
     this.refreshTray(b);
     this.refreshBattleHUD(b);
   },
@@ -772,17 +778,23 @@ const UI = {
     document.getElementById('btnFight').classList.add('hidden');
     document.getElementById('speedBox').classList.remove('hidden');
     document.getElementById('reserveBox').classList.remove('hidden');
+    document.getElementById('abilityBox').classList.toggle('hidden', !b.ability);
     this.refreshTray(b);
+    this.refreshBattleHUD(b);
   },
 
   syncSpeed() {
     for (const s of [0, 1, 2]) document.getElementById('spd' + s).classList.toggle('on', (s === 0 ? 0 : s) === G.speed);
   },
 
-  // ---------------- placement stance (advance vs hold position) ----------------
+  // ---------------- stance (advance vs hold position) ----------------
+  // Sets the stance for the NEXT squad placed/dropped, and is also a live
+  // order: every squad already on the field switches immediately too.
   toggleStance() {
     const b = G.battle; if (!b) return;
     b.stance = b.stance === 'hold' ? 'advance' : 'hold';
+    const hold = b.stance === 'hold';
+    for (const squad of b.squads) if (squad.side === 'player') squad.hold = hold;
     this.syncStance(b);
   },
   syncStance(b) {
@@ -792,8 +804,8 @@ const UI = {
     btn.textContent = hold ? '⛨ HOLD' : '⚑ ADVANCE';
     btn.classList.toggle('on', hold);
     btn.title = hold
-      ? 'New squads will stand their ground and defend where placed'
-      : 'New squads will advance and seek the enemy';
+      ? 'Everyone holds their ground and defends where placed — new squads too'
+      : 'Everyone advances and seeks the enemy — new squads too';
   },
 
   refreshBattleHUD(b) {
@@ -811,6 +823,16 @@ const UI = {
         const n = this.trayOrder ? this.trayOrder.length : 0;
         rs.textContent = `· ${n} squad${n === 1 ? '' : 's'} ready`;
       }
+      if (b.ability) {
+        const btn = document.getElementById('btnAbility');
+        const ready = b.abilityCharges > 0 && b.abilityCdT <= 0;
+        btn.disabled = !ready;
+        btn.classList.toggle('armed', b.abilityArmed);
+        btn.textContent = `☄ ${b.ability.name.toUpperCase()} ×${b.abilityCharges}`;
+        btn.title = b.ability.desc;
+        const cdMax = b.ability.cooldown || 1;
+        document.getElementById('abilityFill').style.width = (ready ? 100 : (1 - b.abilityCdT / cdMax) * 100) + '%';
+      }
     }
   },
 
@@ -821,10 +843,10 @@ const UI = {
     G.run.roster.forEach((entry, i) => {
       const wiped = b.wiped.includes(i);
       const deployed = b.deployed[i];
+      if (deployed && !wiped) return; // on the field — its card is gone from the tray until it's pulled back
       const el = document.createElement('div');
       el.className = 'chip'
         + (b.selected === i ? ' selected' : '')
-        + (deployed ? ' deployed' : '')
         + (wiped ? ' wiped' : '');
       const art = document.createElement('canvas');
       art.className = 'chipArt';
@@ -835,12 +857,10 @@ const UI = {
       const stats = document.createElement('div');
       stats.className = 'chipStats'; stats.innerHTML = squadStatsHtml(entry);
       el.append(art, name, stats);
-      if (!deployed && !wiped) {
+      if (!wiped) {
         this.trayOrder.push(i);
         el.dataset.hotkey = this.trayOrder.length <= 9 ? this.trayOrder.length : '';
         el.onclick = () => this.selectTray(b, i);
-      } else if (deployed && b.phase === 'place') {
-        el.title = 'Right-click (or long-press) it on the field to take it back';
       }
       this.el.tray.appendChild(el);
     });
@@ -859,8 +879,18 @@ const UI = {
       this.hint(b.reserveLeft <= 0 ? 'No reserve drops left' : 'Reserves recharging…');
       return;
     }
+    b.abilityArmed = false;
     b.selected = b.selected === i ? null : i;
     this.refreshTray(b);
+  },
+
+  // ---------------- active army ability (e.g. Worldbreaker Artillery Support) ----------------
+  toggleAbility() {
+    const b = G.battle; if (!b || !b.ability) return;
+    if (b.abilityCharges <= 0 || b.abilityCdT > 0) return;
+    b.selected = null;
+    b.abilityArmed = !b.abilityArmed;
+    this.refreshBattleHUD(b);
   },
 
   hint(msg) {

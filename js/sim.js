@@ -13,8 +13,11 @@ let ENT_ID = 1;
 function newBattle(encId, run) {
   const enc = ENCOUNTERS[encId];
   const hooks = aggHooks(run.relics);
-  const fpk = (FACTIONS[run.fac] || FACTIONS.vanguard).battle;
+  const fac = FACTIONS[run.fac] || FACTIONS.vanguard;
+  const fpk = fac.battle;
   if (fpk.structHpMult) hooks.structHpMult *= fpk.structHpMult;
+  if (fpk.hpMult) hooks.hpMult *= fpk.hpMult;
+  const ability = fac.ability || null;
   const seed = Math.floor(Math.random() * 1e9);
   const tmpl = pick(MAP_TEMPLATES);
   const feats = tmpl.feats.map(f => ({ t: f.t, x: f.x * ARENA.w, y: f.y * ARENA.h, r: f.r }));
@@ -31,6 +34,10 @@ function newBattle(encId, run) {
     nextWave: 35,
     reserveLeft: ECON.reserveDrops + hooks.reserveAdd,
     reserveCdT: 0,
+    ability, abilityArmed: false,
+    abilityCharges: ability ? ability.charges : 0,
+    abilityCdT: 0,
+    barrages: [],
   };
 
   const pfac = FACTIONS[run.fac] ? run.fac : 'vanguard';
@@ -65,7 +72,10 @@ function spawnEnt(b, side, unitId, x, y, over) {
   return e;
 }
 
-function makeModel(b, side, unitId, x, y, umod, squad) {
+// hpFrac, if given, sets the model's STARTING hp below its max (Brutal Mode
+// carrying wounds into the next battle) without touching maxhp — so a
+// wounded squad shows a part-drained bar instead of quietly capping its pool.
+function makeModel(b, side, unitId, x, y, umod, squad, hpFrac) {
   const u = UNITS[unitId];
   let hp = u.hp, dmg = u.dmg;
   if (umod) { hp = Math.round(hp * (umod.hpM || 1)); dmg = Math.round(dmg * (umod.dmgM || 1)); }
@@ -73,8 +83,10 @@ function makeModel(b, side, unitId, x, y, umod, squad) {
     hp = Math.round(hp * b.hooks.hpMult * (u.struct ? b.hooks.structHpMult : 1));
     dmg = Math.round(dmg * b.hooks.dmgMult);
   }
+  const maxhp = hp;
+  if (hpFrac != null) hp = Math.max(1, Math.round(hp * hpFrac));
   const e = spawnEnt(b, side, unitId, x, y, {
-    name: u.name, fac: u.fac, hp, maxhp: hp, dmg,
+    name: u.name, fac: u.fac, hp, maxhp, dmg,
     rng: u.rng, rof: u.rof,
     spd: u.spd * (side === 'player' ? b.hooks.spdMult : 1),
     w: u.w,
@@ -91,18 +103,23 @@ function makeModel(b, side, unitId, x, y, umod, squad) {
 }
 
 // One roster squad → `models` entities in a small cluster around (x,y).
+// Brutal Mode: a roster entry that fought and survived a previous battle
+// carries a `dmg` record ({alive, hpFrac}) — respawn it wounded instead of fresh.
 function spawnSquad(b, side, unitId, x, y, up, rosterIdx, hold) {
   const u = UNITS[unitId];
-  const squad = { side, unitId, rosterIdx: rosterIdx == null ? null : rosterIdx, alive: u.models, up: !!up, hold: !!hold };
+  const entry = side === 'player' && rosterIdx != null ? b.run.roster[rosterIdx] : null;
+  const persisted = entry && entry.dmg;
+  const n = persisted ? clamp(persisted.alive, 1, u.models) : u.models;
+  const squad = { side, unitId, rosterIdx: rosterIdx == null ? null : rosterIdx, alive: n, up: !!up, hold: !!hold };
   b.squads.push(squad);
   const umod = up ? { hpM: 1.3, dmgM: 1.3 } : null;
-  const n = u.models;
+  const hpFrac = persisted ? clamp(persisted.hpFrac, 0.15, 1) : null;
   for (let i = 0; i < n; i++) {
     // wider spread than a tight huddle — keeps one splash hit from catching the whole squad
     const a = (i / n) * Math.PI * 2, d = n > 1 ? u.w * 2.2 : 0;
     const mx = clamp(x + Math.cos(a) * d, 20, ARENA.w - 20);
     const my = clamp(y + Math.sin(a) * d, 20, ARENA.h - 20);
-    makeModel(b, side, unitId, mx, my, umod, squad);
+    makeModel(b, side, unitId, mx, my, umod, squad, hpFrac);
   }
   return squad;
 }
@@ -307,6 +324,46 @@ function killEnt(b, e, source) {
 }
 
 // ---------------------------------------------------------------------------
+// Active army abilities (e.g. Warden's Worldbreaker Artillery Support)
+// ---------------------------------------------------------------------------
+function triggerAbility(b, x, y) {
+  const ab = b.ability;
+  if (!ab || b.phase !== 'fight' || b.over) return false;
+  if (b.abilityCharges <= 0 || b.abilityCdT > 0) return false;
+  b.abilityCharges--;
+  b.abilityCdT = ab.cooldown;
+  const shells = [];
+  for (let i = 0; i < ab.shells; i++) {
+    shells.push({
+      t: b.t + ab.delay + i * 0.32,
+      x: clamp(x + rand(-ab.radius * 0.55, ab.radius * 0.55), 0, ARENA.w),
+      y: clamp(y + rand(-ab.radius * 0.55, ab.radius * 0.55), 0, ARENA.h),
+      done: false,
+    });
+  }
+  b.barrages.push({ x, y, shells });
+  b.fx.push({ kind: 'barrageMark', x, y, r: ab.radius, ttl: ab.delay + 0.15 });
+  return true;
+}
+
+function tickBarrages(b, dt) {
+  if (!b.barrages.length) return;
+  for (const bg of b.barrages) {
+    for (const s of bg.shells) {
+      if (s.done || b.t < s.t) continue;
+      s.done = true;
+      b.fx.push({ kind: 'barrageImpact', x: s.x, y: s.y, r: b.ability.shellRadius, ttl: 0.6 });
+      b.shake = Math.min(1.5, b.shake + 0.35);
+      for (const o of b.ents) {
+        if (o.dead || o.side !== 'enemy') continue;
+        if (dist2(o.x, o.y, s.x, s.y) < b.ability.shellRadius ** 2) dealDamage(b, o, b.ability.dmg, null);
+      }
+    }
+  }
+  b.barrages = b.barrages.filter(bg => bg.shells.some(s => !s.done) || bg.shells.some(s => b.t - s.t < 0.6));
+}
+
+// ---------------------------------------------------------------------------
 // The tick
 // ---------------------------------------------------------------------------
 function simTick(b, dt) {
@@ -314,6 +371,8 @@ function simTick(b, dt) {
   b.t += dt;
   b.shake = Math.max(0, b.shake - dt * 2.2);
   b.reserveCdT = Math.max(0, b.reserveCdT - dt);
+  b.abilityCdT = Math.max(0, b.abilityCdT - dt);
+  tickBarrages(b, dt);
 
   // reinforcement waves (max 3 — a stalled battle must stay winnable)
   if (b.t >= b.nextWave && (b.waveCount || 0) < 3) {

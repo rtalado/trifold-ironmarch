@@ -6,10 +6,10 @@
 
 const Run = {
   // ------------------------------------------------------------------
-  start(fac) {
+  start(fac, brutal) {
     fac = FACTIONS[fac] ? fac : 'vanguard';
     G.run = {
-      fac,
+      fac, brutal: !!brutal,
       roster: FACTIONS[fac].start.map(id => ({ id, up: false })),
       relics: [], scrap: 45,
       act: 0, floor: -1, pos: 0,
