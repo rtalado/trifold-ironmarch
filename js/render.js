@@ -228,6 +228,8 @@ const Render = {
     g.restore();
 
     if (e.frenzy > t) glowDot(g, '#ff4a3455', e.x, e.y, e.w * 0.6);
+    if (e.enrage && e.hp < e.maxhp * e.enrage.hpBelow)
+      glowDot(g, '#ff8a3a55', e.x, e.y, e.w * (0.55 + 0.1 * Math.sin(t * 6)));
     if (e.slow && t < e.slow.until) glowDot(g, '#8fd8e83c', e.x, e.y, e.w * 0.5);
     if (e.boss) {
       g.strokeStyle = PAL[e.fac].glow + '66'; g.lineWidth = 2;

@@ -182,7 +182,7 @@ const UI = {
     on('stnHold', () => this.setStance('hold'));
     on('stnFallback', () => this.setStance('fallback'));
     on('btnAbility', () => this.toggleAbility());
-    for (const s of [0, 1, 2]) {
+    for (const s of [0, 1, 2, 3]) {
       document.getElementById('spd' + s).onclick = () => { G.speed = s === 0 ? 0 : s; this.syncSpeed(); };
     }
   },
@@ -231,7 +231,9 @@ const UI = {
     const d = Meta.data;
     document.getElementById('titleStats').textContent =
       d.runs === 0 ? 'The column awaits its first order.' :
-      `Marches: ${d.runs} · Victories: ${d.wins} · Squads unlocked: ${d.unlocked.length}/${META_UNLOCKS.reduce((n, u) => n + u.squads.length, 0)}`;
+      `Marches: ${d.runs} · Victories: ${d.wins} · Squads unlocked: ${d.unlocked.length}/${META_UNLOCKS.reduce((n, u) => n + u.squads.length, 0)}`
+      + (d.bestEndlessLevel ? ` · Endless best: ${d.bestEndlessLevel}` : '')
+      + (d.bestNightmareLevel ? ` · Nightmare best: ${d.bestNightmareLevel}` : '');
     document.getElementById('btnResume').classList.toggle('hidden', !localStorage.getItem('ironmarch_run_v2'));
     document.getElementById('versionTag').textContent = 'v' + GAME_VERSION;
   },
@@ -441,7 +443,10 @@ const UI = {
           status.textContent = 'That doesn’t read like an Ironmarch save.';
           return;
         }
-        Meta.data = Object.assign({ runs: 0, wins: 0, bestAct: 0, unlocked: [] }, o.meta);
+        Meta.data = Object.assign({
+          runs: 0, wins: 0, bestAct: 0, unlocked: [],
+          bestEndlessLevel: 0, bestNightmareLevel: 0, nightmareUnlocked: false,
+        }, o.meta);
         Meta.save();
         if (o.settings) { Object.assign(Meta.settings, o.settings); Meta.saveSettings(); }
         if (o.run) { try { localStorage.setItem('ironmarch_run_v2', JSON.stringify(o.run)); } catch (e) {} }
@@ -486,6 +491,7 @@ const UI = {
     `);
     const needOf = id => {
       for (const u of META_UNLOCKS) if (u.squads.includes(id)) {
+        if (u.need.endless) return `${u.label} — Endless depth ${u.need.endless}`;
         return u.need.wins ? `${u.label} — ${u.need.wins} victor${u.need.wins > 1 ? 'ies' : 'y'}` : `${u.label} — ${u.need.runs} march${u.need.runs > 1 ? 'es' : ''}`;
       }
       return '';
@@ -873,7 +879,8 @@ const UI = {
       const nxt = this.mapNodes.filter(m => m.node.fl === fl + 1);
       g.strokeStyle = (fl + 1 > hiFl) ? '#24272e' : '#3a3f4d';
       for (const a of cur) for (const bn of nxt) {
-        const proj = cur.length === 1 ? (nxt.length - 1) / 2 : a.node.i * (nxt.length - 1) / (cur.length - 1);
+        // chokepoints (boss floors) fan out to every lane — mirror Run.choices()
+        const proj = cur.length === 1 ? bn.node.i : a.node.i * (nxt.length - 1) / (cur.length - 1);
         if (Math.abs(bn.node.i - proj) <= 1) {
           g.beginPath(); g.moveTo(a.x + ex, a.y + ey); g.lineTo(bn.x - ex, bn.y - ey); g.stroke();
         }
@@ -1032,7 +1039,7 @@ const UI = {
   },
 
   syncSpeed() {
-    for (const s of [0, 1, 2]) document.getElementById('spd' + s).classList.toggle('on', (s === 0 ? 0 : s) === G.speed);
+    for (const s of [0, 1, 2, 3]) document.getElementById('spd' + s).classList.toggle('on', (s === 0 ? 0 : s) === G.speed);
   },
 
   // ---------------- stance: advance / hold / fallback ----------------
@@ -1267,6 +1274,7 @@ const UI = {
 
   showRest() {
     G.screen = 'rest';
+    const wounded = G.run.brutal && G.run.roster.some(e => e.dmg);
     const p = this.overlay(`
       <h2>FIELD CAMP</h2>
       <p class="dim">The fires are low and the pickets are set. One night's grace — use it well.</p>
@@ -1274,8 +1282,13 @@ const UI = {
         <button id="rsDrill">★ Drill a squad (upgrade it)</button>
         <button id="rsRecruit">⛨ Muster local volunteers (gain ${UNITS[FACTIONS[G.run.fac || 'vanguard'].basic].name})</button>
         <button id="rsScavenge">⚙ Scavenge the area (+25 scrap)</button>
+        ${wounded ? '<button id="rsHeal">✚ Tend the wounded (every squad recovers fully)</button>' : ''}
       </div>
     `);
+    if (wounded) p.querySelector('#rsHeal').onclick = () => {
+      G.run.roster.forEach(e => delete e.dmg);
+      G.screen = 'map'; this.showMap();
+    };
     p.querySelector('#rsDrill').onclick = () => this.showRoster(G.run.roster, {
       title: 'Drill which squad?', pick: true, filter: e => !e.up,
       onPick: i => { Run.upgradeSquadAt(i); G.screen = 'map'; this.showMap(); },

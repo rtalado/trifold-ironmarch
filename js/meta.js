@@ -40,7 +40,8 @@ const Meta = {
     if (G.run) d.bestAct = Math.max(d.bestAct, G.run.act + 1);
     const news = [];
     for (const u of META_UNLOCKS) {
-      const met = (!u.need.runs || d.runs >= u.need.runs) && (!u.need.wins || d.wins >= u.need.wins);
+      const met = (!u.need.runs || d.runs >= u.need.runs) && (!u.need.wins || d.wins >= u.need.wins)
+               && (!u.need.endless || d.bestEndlessLevel >= u.need.endless);
       if (met) {
         for (const s of u.squads) {
           if (!d.unlocked.includes(s)) {

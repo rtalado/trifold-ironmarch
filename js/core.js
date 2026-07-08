@@ -5,7 +5,7 @@
 
 // Bump on every player-facing change — shown bottom-right on the title screen
 // so players (and app owners chasing OTA delivery) can confirm they're current.
-const GAME_VERSION = '1.4.0';
+const GAME_VERSION = '1.5.0';
 
 const G = {
   screen: 'title',       // title | map | battle | reward | shop | rest | event | gameover | victory | roster
@@ -25,7 +25,7 @@ const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0
 function aggHooks(relicIds) {
   const h = {
     hpMult: 1, dmgMult: 1, spdMult: 1, shopMult: 1, structHpMult: 1, splashMult: 1,
-    hqArmor: 1, reserveCdMult: 1,
+    hqArmor: 1, reserveCdMult: 1, rofMult: 1, rngMult: 1, healMult: 1,
     scrapAdd: 0, reserveAdd: 0, eliteBounty: 0,
     lastStand: false, recruitUp: false,
     ridgeBonus: TERRAIN_FX.ridgeRange, ruinsGuard: TERRAIN_FX.ruinsGuard,
@@ -39,7 +39,7 @@ function aggHooks(relicIds) {
       else if (key === 'ridgeBonus') h.ridgeBonus = Math.max(h.ridgeBonus, v);
       else if (key === 'ruinsGuard') h.ruinsGuard = Math.min(h.ruinsGuard, v);
       else if (typeof v === 'boolean') h[key] = h[key] || v;
-      else if (['hpMult','dmgMult','spdMult','shopMult','structHpMult','splashMult','hqArmor','reserveCdMult'].includes(key)) h[key] *= v;
+      else if (['hpMult','dmgMult','spdMult','shopMult','structHpMult','splashMult','hqArmor','reserveCdMult','rofMult','rngMult','healMult'].includes(key)) h[key] *= v;
       else h[key] += v;
     }
   }
@@ -58,6 +58,7 @@ function squadStatsHtml(entry) {
   if (u.rng > 70) s += ` · rng ${u.rng}`;
   if (u.splash) s += ' · splash';
   if (u.heal) s += ' · heals';
+  if (u.aura) s += u.aura.armor ? ' · guard aura' : ' · range aura';
   if (u.fly) s += ' · flies';
   if (u.struct) s += ' · emplacement';
   if (u.minRng) s += ' · min range';

@@ -46,6 +46,7 @@ const UNITS = {
   landship:   { name:'Landship',       fac:'vanguard', models:1, pts:15, hp:700, dmg:16, rng:240, rof:2.4, spd:26, w:22, air:true, splash:20 },
   leviathan:  { name:'Leviathan',      fac:'vanguard', models:1, pts:18, hp:980, dmg:48, rng:190, rof:0.8, spd:30, w:22, air:true, splash:36 },
   ratte:      { name:'The Ratte',      fac:'vanguard', models:1, pts:26, hp:1600,dmg:60, rng:330, rof:0.6, spd:16, w:28, air:true, splash:60 },
+  valkyrie:   { name:'Valkyries',      fac:'vanguard', models:3, pts:7,  hp:88,  dmg:13, rng:36,  rof:1.5, spd:112,w:10, fly:true, air:true },
   // ---- emplacements (spd 0, placed like squads) ----
   turret:     { name:'Turret',         fac:'vanguard', models:1, pts:4,  hp:170, dmg:11, rng:230, rof:1.6, spd:0, w:12, air:true, struct:true },
   pillbox:    { name:'Pillbox',        fac:'vanguard', models:1, pts:6,  hp:420, dmg:14, rng:190, rof:2.0, spd:0, w:15, struct:true },
@@ -64,6 +65,7 @@ const UNITS = {
   juggernaut: { name:'Juggernaut',     fac:'syndicate', models:1, pts:8,  hp:320, dmg:30, rng:180, rof:0.55,spd:48, w:16, splash:36 },
   demolisher: { name:'Demolisher',     fac:'syndicate', models:1, pts:9,  hp:120, dmg:46, rng:390, rof:0.28,spd:32, w:15, splash:50, minRng:150 },
   warlord:    { name:'The Warlord',    fac:'syndicate', models:1, pts:16, hp:850, dmg:40, rng:260, rof:0.7, spd:34, w:20, air:true, splash:44 },
+  auditor:    { name:'The Auditor',    fac:'syndicate', models:1, pts:8,  hp:230, dmg:9,  rng:160, rof:1.1, spd:55, w:13, air:true, aura:{rng:210, rngBoost:0.2} },
   watchpost:  { name:'Watchpost',      fac:'syndicate', models:1, pts:4,  hp:150, dmg:10, rng:220, rof:1.5, spd:0, w:11, air:true, struct:true },
   gunbastion: { name:'Gun Bastion',    fac:'syndicate', models:1, pts:7,  hp:520, dmg:20, rng:230, rof:0.9, spd:0, w:15, splash:30, struct:true },
   goldvault:  { name:'Bullion Vault',  fac:'syndicate', models:1, pts:5,  hp:260, dmg:0,  rng:0,   rof:0,   spd:0, w:14, struct:true, rent:10 },
@@ -77,6 +79,7 @@ const UNITS = {
   bombard:    { name:'Bombard',        fac:'warden', models:1, pts:7,  hp:172, dmg:34, rng:300, rof:0.35,spd:30, w:14, splash:42, minRng:110 },
   ironclad:   { name:'Ironclad',       fac:'warden', models:1, pts:8,  hp:472, dmg:25, rng:48,  rof:0.9, spd:40, w:16 },
   castellan:  { name:'Castellan',      fac:'warden', models:1, pts:12, hp:770, dmg:36, rng:220, rof:0.6, spd:26, w:19, air:true, splash:30 },
+  aegis:      { name:'Aegis Bearers',  fac:'warden', models:2, pts:8,  hp:210, dmg:12, rng:36,  rof:0.9, spd:46, w:11, aura:{rng:130, armor:0.85} },
   trebuchet:  { name:'Trebuchet',      fac:'warden', models:1, pts:11, hp:106, dmg:60, rng:460, rof:0.22,spd:22, w:15, splash:60, minRng:200 },
   rampart:    { name:'Rampart',        fac:'warden', models:1, pts:3,  hp:660, dmg:0,  rng:0,   rof:0,   spd:0, w:14, struct:true, rent:2, aura:{rng:150, armor:0.8} },
   ballista:   { name:'Ballista Tower', fac:'warden', models:1, pts:5,  hp:240, dmg:36, rng:320, rof:0.5, spd:0, w:13, air:true, struct:true },
@@ -148,18 +151,20 @@ const SQUADS = {
   siegetank: { rar:'uncommon' }, gunship:{ rar:'uncommon' },
   goliath:   { rar:'rare' }, bomber:{ rar:'rare' }, artillery:{ rar:'rare' },
   cannon:    { rar:'rare' }, landship:{ rar:'rare' }, leviathan:{ rar:'rare' }, ratte:{ rar:'rare' },
+  valkyrie:  { rar:'rare' },
   // syndicate
   enforcer:  { rar:'common' }, gunhand:{ rar:'common' }, marauder:{ rar:'common' },
   arbalest:  { rar:'common' }, sawbones:{ rar:'common' }, watchpost:{ rar:'common' },
   dragoon:   { rar:'uncommon' }, ironhide:{ rar:'uncommon' }, juggernaut:{ rar:'uncommon' },
   goldvault: { rar:'uncommon' },
-  demolisher:{ rar:'rare' }, gunbastion:{ rar:'rare' }, warlord:{ rar:'rare' },
+  demolisher:{ rar:'rare' }, gunbastion:{ rar:'rare' }, warlord:{ rar:'rare' }, auditor:{ rar:'rare' },
   // warden
   sentinel:  { rar:'common' }, wardenguard:{ rar:'common' }, pikeman:{ rar:'common' },
   marshal:   { rar:'common' }, rampart:{ rar:'common' }, ballista:{ rar:'common' },
   halberdier:{ rar:'uncommon' }, bombard:{ rar:'uncommon' }, ironclad:{ rar:'uncommon' },
   cauldron:  { rar:'uncommon' },
   redoubt:   { rar:'rare' }, castellan:{ rar:'rare' }, trebuchet:{ rar:'rare' }, bulwark:{ rar:'rare' },
+  aegis:     { rar:'rare' },
 };
 
 // ---------------------------------------------------------------------------
@@ -233,6 +238,10 @@ const RELICS = {
   r_warbonds:   { name:'War Bonds',          desc:'+15 scrap whenever an enemy elite or boss falls.', hooks:{eliteBounty:15} },
   r_plating:    { name:'HQ Plating',         desc:'Your Field HQ takes 30% less damage.',        hooks:{hqArmor:0.7} },
   r_drills:     { name:'Drill Instructors',  desc:'Newly recruited squads arrive upgraded.',     hooks:{recruitUp:true} },
+  r_overdrive:  { name:'Fire Discipline',    desc:'Your units attack 12% faster.',               hooks:{rofMult:1.12} },
+  r_longbarrels:{ name:'Long Barrels',       desc:'Your units have +10% range.',                 hooks:{rngMult:1.1} },
+  r_deepReserve:{ name:'Deep Reserves',      desc:'+2 reserve drops per battle.',                hooks:{reserveAdd:2} },
+  r_fieldMed:   { name:'Field Medicine',     desc:'All healing your units receive is 50% stronger.', hooks:{healMult:1.5} },
 };
 
 // ---------------------------------------------------------------------------
@@ -372,6 +381,34 @@ const EVENTS = [
       { label:'Jam the channel', result:{scrap:-10, safe:true}, note:'-10 scrap, but nothing follows you' },
       { label:'Let them sing back', result:{random:[{squad:'rare'},{loseSquad:true}]}, note:'50%: a rare squad. 50%: a squad walks into the ash' },
     ]},
+  { id:'fever', title:'Marsh Fever',
+    text:'Three days through standing water, and now a whole tent line is sweating through their coats. The surgeon says it will pass — or spread. She says it in the tone she uses when she means spread.',
+    choices:[
+      { label:'Buy medicine from camp followers', cost:40, result:{safe:true}, note:'-40 scrap, the fever breaks' },
+      { label:'Quarantine the worst of them', result:{loseSquad:'random'}, note:'A squad stays behind' },
+      { label:'March it off', result:{random:[{nothing:true},{loseSquad:'random'}]}, note:'50%: they recover. 50%: a squad doesn\'t' },
+    ]},
+  { id:'arsenal', title:'The Sunken Arsenal',
+    text:'A supply barge sits on the riverbed where a bridge used to be, hatches still sealed, cargo manifest still legible from the bank: guns. Nobody knows whose. The river is cold and does not care.',
+    choices:[
+      { label:'Dive for the hold', result:{random:[{squad:'rare'},{scrap:-15}]}, note:'50%: a rare squad\'s worth of arms. 50%: lose 15 scrap in ruined gear' },
+      { label:'Salvage the deck fittings', result:{scrap:30}, note:'+30 scrap' },
+      { label:'Leave it for the river', result:{nothing:true}, note:'Nothing happens' },
+    ]},
+  { id:'mapmaker', title:'The Cartographer',
+    text:'She has been mapping the occupied provinces alone since before the column mustered, and her maps are better than yours. She will trade — she always trades — but she prices like someone who knows what things cost out here.',
+    choices:[
+      { label:'Buy her survey (25 scrap)', cost:25, result:{relic:true}, note:'Gain a random requisition' },
+      { label:'Take the shortcut she marks', result:{random:[{scrap:45},{nothing:true}]}, note:'50%: +45 scrap in saved supplies. 50%: the shortcut is gone' },
+      { label:'Trade road gossip and part ways', result:{nothing:true}, note:'Nothing happens' },
+    ]},
+  { id:'drums', title:'Drums in the Hills',
+    text:'All night, drums from the ridgeline — not Swarm, not Choir, not anything the scouts can name. Deserters from a dozen armies live up there now. Some of them remember being soldiers.',
+    choices:[
+      { label:'Answer with your own horns', result:{random:[{squad:'uncommon'},{loseSquad:'random'}]}, note:'50%: fighters come down. 50%: a squad goes up' },
+      { label:'Douse the fires and wait them out', result:{nothing:true}, note:'Nothing happens' },
+      { label:'Break camp early', result:{scrap:-10, safe:true}, note:'-10 scrap in abandoned kit, but no trouble' },
+    ]},
 ];
 
 // ---------------------------------------------------------------------------
@@ -387,6 +424,10 @@ const META_UNLOCKS = [
   { need:{wins:1},  squads:['warlord'],   label:'The War Exchange' },
   { need:{runs:2},  squads:['trebuchet'], label:'Grand Arsenal' },
   { need:{wins:2},  squads:['bulwark'],   label:'The Bulwark Writ' },
+  // endless-road requisitions — need.endless = best Endless depth reached
+  { need:{endless:10}, squads:['valkyrie'], label:'Skyfall Contract' },
+  { need:{endless:15}, squads:['auditor'],  label:'The Long Count' },
+  { need:{endless:20}, squads:['aegis'],    label:'The Moving Wall' },
 ];
 
 const UNLOCK_IDS = META_UNLOCKS.flatMap(u => u.squads);

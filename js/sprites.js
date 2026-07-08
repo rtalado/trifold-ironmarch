@@ -736,6 +736,10 @@ const RECIPES = {
   leviathan:  { r:22, f:(g,p)=>{ tdWalker(g,p,{r:22}); glowDot(g,p.glow,0,0,5); } },
   ratte:      { r:28, f:(g,p)=>{ tdVehicle(g,p,{L:96,W:52,barrel:56,big:true,twin:true,turretBack:true});
                  glowDot(g,p.glow,-30,0,5); } },
+  valkyrie:   { r:10, f:(g,p)=>{ tdInfantry(g,p,{r:10, weapon:'rifle'});
+                 g.strokeStyle=p.glow+'aa'; g.lineWidth=1.8; g.lineCap='round';   // jump-jet trails
+                 g.beginPath(); g.moveTo(-9,-4); g.lineTo(-16,-7); g.moveTo(-9,4); g.lineTo(-16,7); g.stroke();
+                 glowDot(g,p.glow,-15,-6.5,1.6); glowDot(g,p.glow,-15,6.5,1.6); } },
   turret:     { r:12, f:(g,p)=>tdStructure(g,p,{r:12,kind:'turret'}) },
   pillbox:    { r:15, f:(g,p)=>tdStructure(g,p,{r:15,kind:'bunker'}) },
   cannon:     { r:15, f:(g,p)=>tdStructure(g,p,{r:15,kind:'cannon'}) },
@@ -759,6 +763,14 @@ const RECIPES = {
   demolisher: { r:15, f:(g,p)=>tdVehicle(g,p,{L:42,W:24,barrel:42,big:true,turretBack:true,spade:true}) },
   warlord:    { r:20, f:(g,p)=>{ tdVehicle(g,p,{L:66,W:42,barrel:46,big:true,twin:true,turretBack:true});
                  glowDot(g,p.glow,-24,0,4.5); glowDot(g,p.glow,10,0,3); } },
+  auditor:    { r:13, f:(g,p)=>{ tdVehicle(g,p,{L:34,W:22,barrel:10});
+                 softShape(g,p.mid,0,gg=>gg.ellipse(-3,-5,7,4,-0.5,0,7));      // survey dish
+                 blob(g,p.dark,-3,-5,4,2.2,-0.5);
+                 g.strokeStyle=p.hi; g.lineWidth=1.1;
+                 g.beginPath(); g.moveTo(-3,-5); g.lineTo(3,-11); g.stroke();
+                 glowDot(g,p.glow,3,-11,1.6);
+                 g.strokeStyle=p.glow+'44'; g.lineWidth=1;                      // the long count, radiating
+                 g.beginPath(); g.arc(-3,-5,10,-1.2,0.2); g.stroke(); } },
   watchpost:  { r:11, f:(g,p)=>tdStructure(g,p,{r:11,kind:'turret'}) },
   gunbastion: { r:15, f:(g,p)=>{ tdStructure(g,p,{r:15,kind:'cannon'});
                  rimStroke(g,p.hi,2,gg=>gg.arc(0,0,17,-2.9,-0.3)); } },
@@ -785,6 +797,12 @@ const RECIPES = {
                  blob(g,p.mid,12,0,6,10,0);                  // ram prow
                  rimStroke(g,p.rim,2,gg=>{gg.moveTo(16,-9); gg.lineTo(20,0); gg.lineTo(16,9);}); } },
   castellan:  { r:19, f:(g,p)=>{ tdWalker(g,p,{r:19}); glowDot(g,p.glow,0,0,4); } },
+  aegis:      { r:11, f:(g,p)=>{ tdInfantry(g,p,{r:11, weapon:'none', pack:true});
+                 blob(g,p.mid,8,0,5.5,8.5,0);                 // full tower shield
+                 blob(g,p.hi+'44',7,-2,3,4,0);
+                 rimStroke(g,p.rim,2,gg=>{gg.moveTo(10.5,-8); gg.lineTo(10.5,8);});
+                 g.strokeStyle=p.glow+'3c'; g.lineWidth=1.2;  // wardlight aura ring
+                 g.beginPath(); g.arc(0,0,16,0,7); g.stroke(); } },
   trebuchet:  { r:15, f:(g,p)=>{ tdVehicle(g,p,{L:40,W:22,barrel:0,spade:true});
                  g.strokeStyle=p.dark; g.lineWidth=3.4; g.lineCap='round';
                  g.beginPath(); g.moveTo(-14,0); g.lineTo(24,-7); g.stroke();  // throwing arm

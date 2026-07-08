@@ -88,14 +88,16 @@ function makeModel(b, side, unitId, x, y, umod, squad, hpFrac) {
   }
   const maxhp = hp;
   if (hpFrac != null) hp = Math.max(1, Math.round(hp * hpFrac));
+  const player = side === 'player';
   const e = spawnEnt(b, side, unitId, x, y, {
     name: u.name, fac: u.fac, hp, maxhp, dmg,
-    rng: u.rng, rof: u.rof,
-    spd: u.spd * (side === 'player' ? b.hooks.spdMult : 1),
+    rng: u.rng * (player ? b.hooks.rngMult : 1),
+    rof: u.rof * (player ? b.hooks.rofMult : 1),
+    spd: u.spd * (player ? b.hooks.spdMult : 1),
     w: u.w,
-    splash: (u.splash || 0) * (side === 'player' ? b.hooks.splashMult : 1),
+    splash: (u.splash || 0) * (player ? b.hooks.splashMult : 1),
     fly: !!u.fly, air: !!u.air, struct: !!u.struct,
-    heal: u.heal || 0, healRng: u.healRng || 0,
+    heal: (u.heal || 0) * (player ? b.hooks.healMult : 1), healRng: u.healRng || 0,
     minRng: u.minRng || 0, aura: u.aura || null,
     deathSpawn: u.deathSpawn, deathBurst: u.deathBurst, dodge: u.dodge || 0,
     slowHit: u.slowHit || null, spawn: u.spawn ? { ...u.spawn } : null, boss: !!u.boss,
@@ -215,7 +217,9 @@ function effRng(b, e) {
   if (!e.fly && featAt2(b, e.x, e.y, 'ridge')) r *= (e.side === 'player' ? b.hooks.ridgeBonus : TERRAIN_FX.ridgeRange);
   if (e.side === 'player') {
     for (const a of b.ents) {
-      if (a.dead || a.side !== 'player' || !a.aura) continue;
+      // rngBoost check matters: armor-only auras (Rampart, Aegis Bearers)
+      // must not poison the multiplication with undefined
+      if (a.dead || a.side !== 'player' || !a.aura || !a.aura.rngBoost) continue;
       if (dist2(a.x, a.y, e.x, e.y) < a.aura.rng * a.aura.rng) { r *= 1 + a.aura.rngBoost; break; }
     }
   }

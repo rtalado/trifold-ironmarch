@@ -103,6 +103,9 @@ const Run = {
       if (idx >= pool.length - lockedOut) return;    // heaviest units stay locked pre-depth15
       comp[id] = Math.max(1, 12 - UNITS[id].pts);     // cheaper units weighted higher
     });
+    // deep-road escalation: past depth 35, elite packs can field the faction's
+    // boss unit as a rare line entry (budget affordability keeps it bounded)
+    if (kind === 'elite' && depth >= 35) comp[BOSS_UNIT[fac]] = 1;
     const enc = { fac, tier, budget, waves, style: pick(['line', 'swarm', 'flank']), coreHP, comp };
     if (kind === 'elite') enc.elite = true;
     if (kind === 'boss') { enc.boss = BOSS_UNIT[fac]; enc.budget = Math.round(enc.budget * 0.7); }
@@ -147,7 +150,8 @@ const Run = {
     const next = r.map[r.floor + 1];
     if (next.length === 1) return next;
     const cur = r.map[r.floor], n = cur.length, m = next.length;
-    const proj = n === 1 ? (m - 1) / 2 : r.pos * (m - 1) / (n - 1);
+    if (n === 1) return next;   // a chokepoint (boss floor) fans out to every lane
+    const proj = r.pos * (m - 1) / (n - 1);
     return next.filter(node => Math.abs(node.i - proj) <= 1);
   },
 

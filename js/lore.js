@@ -163,6 +163,7 @@ const LORE = {
     cannon:     'A fortress gun on a field mount, traded from the Covenant back when the Covenant still traded. Nothing on the field out-ranges it and survives the discovery.',
     hospital:   'A tent, a surgeon, and the war\'s only unconditional promise. Squads fight measurably harder inside its lamplight.',
     radar:      'A dish listening for tomorrow. Under its sweep, every gun in the column shoots a shade further than the enemy planned around.',
+    valkyrie:   'Jump infantry off the Skyfall Contract — the last airborne school the west still runs. Valkyries arrive by falling out of the sky on purpose, and the enemy line rarely improves on that first impression.',
 
     // ---- syndicate ----
     enforcer:   'The Syndicate\'s standard line item: rifle, armour, contract, severance policy. Enforcers fight well because the bonus structure is explained before every engagement.',
@@ -178,6 +179,7 @@ const LORE = {
     watchpost:  'A prefab picket gun the Syndicate air-drops onto anything it intends to own. The flag it flies is a receipt.',
     gunbastion: 'The heavy anchor of a Syndicate hold — nine hundred pounds of turret bought, not built. It holds ground the way the Syndicate holds debt: with interest.',
     goldvault:  'A strongroom on the battlefield, humming with compound interest. Guard it well; a standing vault pays the column the moment the shooting stops.',
+    auditor:    'A survey car from the Long Count, the Syndicate\'s census of everything ownable. Its instruments were built to appraise territory; pointed at a battlefield, they extend every nearby gun\'s reach to the exact edge of what the ledger says is theirs.',
 
     // ---- warden ----
     sentinel:   'Oath-sworn shield infantry, first stone in every Warden wall. A Sentinel\'s tower shield is inscribed with the names of everyone who carried it before him.',
@@ -194,6 +196,7 @@ const LORE = {
     cauldron:   'Burning oil on a swivel. The recipe is scripture, the smell is punishment, and the ground it guards stays guarded.',
     redoubt:    'A self-contained strongpoint with a long gun and no further requirements. Redoubts are where enemy offensives go to become sieges, and Warden sieges have one ending.',
     bulwark:    'The doomsday fortress of the Grand Arsenal — a citadel that arrives by writ, guns already sighted. The Covenant builds one when it has decided a place is finished changing hands.',
+    aegis:      'The Moving Wall made literal: paired shield-bearers whose tower shields were quarried, not forged. Soldiers marching in their shadow take wounds the way a wall takes weather.',
 
     // ---- myriad ----
     swarmling:  'The Swarm\'s smallest thought — chitin, teeth, and forward momentum. One is vermin. Five hundred are weather.',
