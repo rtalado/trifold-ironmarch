@@ -113,7 +113,27 @@ const UNITS = {
   hemospire:  { name:'Hemorrhage Spire', fac:'pact', models:1, pts:8, hp:300, dmg:18, rng:240, rof:0.8, spd:0, w:14, struct:true },
   avatar:     { name:'Avatar of the Pact', fac:'pact', models:1, pts:36, hp:2400, dmg:44, rng:74, rof:1.0, spd:28, w:28, splash:56, boss:true,
                 frenzyAura:true, spawn:{unit:'thrall', every:5} },
+
+  // ======================= THE VIRULENT STRAIN (nightmare) =======================
+  // Every hit it eats is tuition. Front-line units enrage (hit harder & faster)
+  // once wounded below half health — see the `enrage` mechanic in sim.js.
+  spawnling:  { name:'Spawnlings',     fac:'strain', models:5, pts:3,  hp:22,  dmg:4,  rng:20, rof:1.9, spd:98, w:8,
+                enrage:{hpBelow:0.5,  dmgMult:1.45, spdMult:1.30} },
+  biter:      { name:'Biters',         fac:'strain', models:3, pts:5,  hp:78,  dmg:11, rng:24, rof:1.3, spd:72, w:9,
+                enrage:{hpBelow:0.5,  dmgMult:1.35, spdMult:1.20} },
+  stinger:    { name:'Stingers',       fac:'strain', models:3, pts:5,  hp:44,  dmg:7,  rng:110,rof:2.0, spd:128,w:9,  air:true,
+                enrage:{hpBelow:0.45, dmgMult:1.30, spdMult:1.25} },
+  lurker:     { name:'Lurkers',        fac:'strain', models:2, pts:6,  hp:60,  dmg:12, rng:150,rof:0.8, spd:50, w:10, air:true, splash:20,
+                enrage:{hpBelow:0.45, dmgMult:1.25, spdMult:1.15} },
+  lasher:     { name:'Lashers',        fac:'strain', models:2, pts:7,  hp:64,  dmg:24, rng:220,rof:0.55,spd:44, w:10, air:true },
+  drifter:    { name:'Drifters',       fac:'strain', models:2, pts:6,  hp:70,  dmg:10, rng:30, rof:1.4, spd:112,w:10, fly:true },
+  mender:     { name:'Mender',         fac:'strain', models:1, pts:6,  hp:90,  dmg:0,  rng:0,  rof:0,   spd:56, w:10, heal:9, healRng:135 },
+  genesisAbomination: { name:'Genesis Abomination', fac:'strain', models:1, pts:42, hp:3000, dmg:52, rng:72, rof:0.85, spd:24, w:30, splash:62, boss:true,
+                spawn:{unit:'spawnling', every:4}, enrage:{hpBelow:0.35, dmgMult:1.5, spdMult:1.2} },
 };
+
+// Endless/Nightmare boss lookup — see Run.genEndlessEncounter in run.js.
+const BOSS_UNIT = { myriad:'hiveRegent', choir:'requiem', pact:'avatar', strain:'genesisAbomination' };
 
 // Pact frenzy: when a pact model dies, nearby pact units rage.
 const FRENZY = { dmgMult:1.35, spdMult:1.35, dur:6, rng:140 };
@@ -229,6 +249,7 @@ const TERRAIN_FX = {
     myriad: { regen: 0.02, foeSlow: 0.85 },
     choir:  { dmg: 1.15 },
     pact:   { spd: 1.15 },
+    strain: { regen: 0.035, foeSlow: 0.85 },
   },
 };
 

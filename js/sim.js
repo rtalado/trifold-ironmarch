@@ -11,7 +11,9 @@ let ENT_ID = 1;
 // Battle construction
 // ---------------------------------------------------------------------------
 function newBattle(encId, run) {
-  const enc = ENCOUNTERS[encId];
+  // encId is either a known ENCOUNTERS key (campaign) or a plain encounter
+  // object generated on the fly (endless/nightmare — see Run.genEndlessEncounter)
+  const enc = typeof encId === 'string' ? ENCOUNTERS[encId] : encId;
   const hooks = aggHooks(run.relics);
   const fac = FACTIONS[run.fac] || FACTIONS.vanguard;
   const fpk = fac.battle;
@@ -56,7 +58,7 @@ function newBattle(encId, run) {
 }
 
 function coreName(fac) {
-  return { myriad: 'Hive Cluster', choir: 'Ossuary Gate', pact: 'Blood Altar' }[fac] || 'Core';
+  return { myriad: 'Hive Cluster', choir: 'Ossuary Gate', pact: 'Blood Altar', strain: 'The Progenitor' }[fac] || 'Core';
 }
 
 // ---------------------------------------------------------------------------
@@ -97,7 +99,7 @@ function makeModel(b, side, unitId, x, y, umod, squad, hpFrac) {
     minRng: u.minRng || 0, aura: u.aura || null,
     deathSpawn: u.deathSpawn, deathBurst: u.deathBurst, dodge: u.dodge || 0,
     slowHit: u.slowHit || null, spawn: u.spawn ? { ...u.spawn } : null, boss: !!u.boss,
-    raiseDead: !!u.raiseDead, squad,
+    raiseDead: !!u.raiseDead, enrage: u.enrage || null, squad,
   });
   if (e.spawn) e.spawnT = e.spawn.every * (0.5 + Math.random() * 0.5);
   return e;
@@ -199,6 +201,7 @@ function effSpd(b, e) {
   let s = e.spd;
   if (e.slow && b.t < e.slow.until) s *= e.slow.mult;
   if (e.frenzy > b.t) s *= FRENZY.spdMult;
+  if (e.enrage && e.hp < e.maxhp * e.enrage.hpBelow) s *= e.enrage.spdMult;
   const host = featAt2(b, e.x, e.y, 'hostile');
   if (host) {
     const fx = TERRAIN_FX.hostile[b.fac];
@@ -221,6 +224,7 @@ function effRng(b, e) {
 function effDmg(b, e) {
   let d = e.dmg;
   if (e.frenzy > b.t) d *= FRENZY.dmgMult;
+  if (e.enrage && e.hp < e.maxhp * e.enrage.hpBelow) d *= e.enrage.dmgMult;
   if (e.side === 'enemy') {
     const host = featAt2(b, e.x, e.y, 'hostile');
     if (host && TERRAIN_FX.hostile[b.fac].dmg) d *= TERRAIN_FX.hostile[b.fac].dmg;

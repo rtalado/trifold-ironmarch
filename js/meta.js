@@ -12,7 +12,10 @@ const Meta = {
 
   load() {
     try { this.data = JSON.parse(localStorage.getItem(this.KEY)) || null; } catch (e) { this.data = null; }
-    if (!this.data) this.data = { runs: 0, wins: 0, bestAct: 0, unlocked: [] };
+    this.data = Object.assign({
+      runs: 0, wins: 0, bestAct: 0, unlocked: [],
+      bestEndlessLevel: 0, bestNightmareLevel: 0, nightmareUnlocked: false,
+    }, this.data || {});
     let s = null;
     try { s = JSON.parse(localStorage.getItem(this.SKEY)); } catch (e) {}
     this.settings = Object.assign({ shake: true, haptics: true, holdMs: 450 }, s || {});
@@ -49,5 +52,21 @@ const Meta = {
     }
     this.save();
     return news;
+  },
+
+  // called live as the player advances floors in Endless/Nightmare (not just
+  // at run end) — returns true the moment Nightmare unlocks, so the caller
+  // can flag the current run to show the banner on its eventual game-over.
+  recordEndlessProgress(mode, depth) {
+    const d = this.data;
+    let justUnlocked = false;
+    if (mode === 'endless') {
+      if (depth > d.bestEndlessLevel) d.bestEndlessLevel = depth;
+      if (depth >= 100 && !d.nightmareUnlocked) { d.nightmareUnlocked = true; justUnlocked = true; }
+    } else if (mode === 'nightmare') {
+      if (depth > d.bestNightmareLevel) d.bestNightmareLevel = depth;
+    }
+    this.save();
+    return justUnlocked;
   },
 };

@@ -4,6 +4,8 @@
 // ============================================================================
 'use strict';
 
+const ENEMY_NAMES = { myriad:'Myriad Swarm', choir:'Ashen Choir', pact:'Obsidian Pact', strain:'The Virulent Strain' };
+
 const UI = {
   el: {}, mapNodes: [], hintT: null,
 
@@ -168,6 +170,7 @@ const UI = {
     const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
     on('btnStart', () => this.showFactionSelect());
     on('btnResume', () => this.resumeRun());
+    on('btnEndless', () => this.showEndlessSelect());
     on('btnArmory', () => this.showArmory());
     on('btnCodex', () => this.showCodex());
     on('btnSettings', () => this.showSettings(() => this.showTitle()));
@@ -516,6 +519,7 @@ const UI = {
       const r = JSON.parse(localStorage.getItem('ironmarch_run_v2'));
       if (r && r.map && r.roster) {
         if (!r.fac || !FACTIONS[r.fac]) r.fac = 'vanguard'; // pre-faction saves
+        if (!r.mode) r.mode = 'campaign'; // pre-endless saves
         G.run = r; G.screen = 'map'; this.showMap(); return;
       }
     } catch (e) {}
@@ -561,6 +565,57 @@ const UI = {
   },
 
   // =================================================================
+  // ENDLESS SELECT — Endless, or (once unlocked) Nightmare
+  // =================================================================
+  showEndlessSelect() {
+    G.screen = 'endlessselect';
+    this.backFn = () => this.showTitle();
+    const d = Meta.data;
+    const nmLocked = !d.nightmareUnlocked;
+    const p = this.overlay(`
+      <h2>THE ENDLESS ROAD</h2>
+      <p class="dim small">One column, one road, no end in sight. The road forks wider the deeper you march — and the fog never shows more than two turns ahead.</p>
+      <div class="modeRow">
+        <button id="endModeA">ENDLESS <span class="dim small">— best depth ${d.bestEndlessLevel}</span></button>
+        <button id="endModeB" ${nmLocked ? 'disabled' : ''}>NIGHTMARE${nmLocked ? '' : ` <span class="dim small">— best depth ${d.bestNightmareLevel}</span>`}</button>
+      </div>
+      ${nmLocked ? `<p class="dim small gold" style="text-align:center; margin-top:6px">Nightmare unlocks once a column reaches Endless depth 100.</p>` : ''}
+      <label class="brutalToggle"><input type="checkbox" id="fsBrutal"> <b>Brutal Mode</b> — squads that survive a battle carry their wounds into the next one instead of healing up fully.</label>
+      <div id="facRow" class="facRow"></div>
+      <button id="fsBack" class="ghostBtn">Back</button>
+    `);
+    let mode = 'endless';
+    const modeA = p.querySelector('#endModeA'), modeB = p.querySelector('#endModeB');
+    const syncMode = () => { modeA.classList.toggle('on', mode === 'endless'); modeB.classList.toggle('on', mode === 'nightmare'); };
+    syncMode();
+    modeA.onclick = () => { mode = 'endless'; syncMode(); };
+    if (!nmLocked) modeB.onclick = () => { mode = 'nightmare'; syncMode(); };
+
+    const row = p.querySelector('#facRow');
+    const brutalBox = p.querySelector('#fsBrutal');
+    for (const [id, f] of Object.entries(FACTIONS)) {
+      const el = document.createElement('div');
+      el.className = 'facCard';
+      const art = document.createElement('canvas');
+      art.className = 'facArt';
+      art.width = 240; art.height = 120;
+      const g = art.getContext('2d');
+      g.fillStyle = '#10131a'; g.fillRect(0, 0, 240, 120);
+      const core = Sprites.core(id);
+      g.drawImage(core.canvas, 120 - 52, 60 - 52, 104, 104);
+      el.appendChild(art);
+      el.insertAdjacentHTML('beforeend', `
+        <div class="facName">${f.name}</div>
+        <div class="facMotto">“${f.motto}”</div>
+        <ul class="facPerks">${f.perks.map(x => `<li>${x}</li>`).join('')}</ul>
+      `);
+      el.onclick = () => { this.clearSave(); Run.start(id, brutalBox.checked, mode); };
+      row.appendChild(el);
+    }
+    p.querySelector('#fsBack').onclick = () => this.showTitle();
+  },
+
+  // =================================================================
   // CODEX — the war, the factions, and every unit's story
   // =================================================================
   showCodex() {
@@ -574,10 +629,10 @@ const UI = {
       <button id="cxBack" class="ghostBtn" style="margin-top:12px">Back</button>
     `);
     const list = p.querySelector('#cxList');
-    const enemyNames = { myriad:'Myriad Swarm', choir:'Ashen Choir', pact:'Obsidian Pact' };
     for (const id of Object.keys(LORE.factions)) {
+      if (id === 'strain' && !Meta.data.nightmareUnlocked) continue;
       const b = document.createElement('button');
-      b.textContent = FACTIONS[id] ? FACTIONS[id].name : enemyNames[id];
+      b.textContent = FACTIONS[id] ? FACTIONS[id].name : ENEMY_NAMES[id];
       b.onclick = () => this.showCodexFaction(id);
       list.appendChild(b);
     }
@@ -614,7 +669,19 @@ const UI = {
     G.screen = 'codex';
     this.backFn = () => this.showCodex();
     const f = LORE.factions[facId];
-    const fname = FACTIONS[facId] ? FACTIONS[facId].name : { myriad:'Myriad Swarm', choir:'Ashen Choir', pact:'Obsidian Pact' }[facId];
+    const fname = FACTIONS[facId] ? FACTIONS[facId].name : ENEMY_NAMES[facId];
+    // The Strain stays deliberately unrostered here — the reveal is fighting
+    // it in Nightmare, not reading about it first.
+    if (facId === 'strain') {
+      const p = this.overlay(`
+        <h2>${fname.toUpperCase()}</h2>
+        <p class="dim small">${f.kicker}</p>
+        ${f.text.map(t => `<p class="loreText">${t}</p>`).join('')}
+        <button id="cxBack" class="ghostBtn" style="margin-top:14px">Back to codex</button>
+      `);
+      p.querySelector('#cxBack').onclick = () => this.showCodex();
+      return;
+    }
     const units = Object.keys(UNITS).filter(id => UNITS[id].fac === facId);
     const staff = LORE.staff[facId];
     const p = this.overlay(`
@@ -657,6 +724,7 @@ const UI = {
   // MAP — rendered at device resolution with vector icons
   // =================================================================
   showMap() {
+    if (G.run.mode !== 'campaign') { this.showEndlessMap(); return; }
     this.show('map');
     G.screen = 'map';
     this.saveRun();
@@ -719,6 +787,116 @@ const UI = {
       const done = m.node.done, cur = m.node.fl === r.floor && m.node.i === r.pos;
       const col = COLORS[m.node.type];
       const R = m.node.type === 'boss' ? 28 : 20;
+      if (m.clickable) glowDot(g, col + '55', m.x, m.y, R * 0.85);
+      g.fillStyle = done ? '#1a1d25' : '#252a38';
+      g.strokeStyle = m.clickable ? col : done ? '#31374a' : '#4a5164';
+      g.lineWidth = m.clickable ? 2.5 : 1.5;
+      g.beginPath(); g.arc(m.x, m.y, R, 0, 7); g.fill(); g.stroke();
+      this.drawIcon(g, m.node.type, m.x, m.y, R * 0.62, done ? '#4a5264' : col);
+      if (cur) { g.strokeStyle = '#e8ecf4'; g.lineWidth = 1.5; g.beginPath(); g.arc(m.x, m.y, R + 5, 0, 7); g.stroke(); }
+    }
+    // legend (wraps on narrow screens)
+    let lx = 22, ly = cssH - 22;
+    g.font = '13px Georgia, serif'; g.textBaseline = 'middle';
+    const legend = [['battle','battle'],['elite','elite'],['event','event'],['shop','market'],['rest','camp'],['treasure','cache'],['boss','boss']];
+    if (vert) {
+      const rows = Math.ceil(legend.reduce((w, [, l]) => w + 48 + g.measureText(l).width, 0) / (cssW - 44));
+      ly = cssH - 12 - (rows - 1) * 20;
+    }
+    for (const [type, label] of legend) {
+      const w = 30 + g.measureText(label).width + 18;
+      if (lx + w > cssW - 12) { lx = 22; ly += 20; }
+      this.drawIcon(g, type, lx + 8, ly, 7, '#5a6478');
+      g.fillStyle = '#5a6478'; g.textAlign = 'left';
+      g.fillText(label, lx + 20, ly + 1);
+      lx += w;
+    }
+  },
+
+  // =================================================================
+  // ENDLESS MAP — a scrolling, fogged road: only the current node and the
+  // next ENDLESS.LOOKAHEAD are shown in full; one hazy "?" pip beyond that
+  // hints the road continues, and nothing further is drawn at all.
+  // =================================================================
+  showEndlessMap() {
+    this.show('map');
+    G.screen = 'map';
+    this.saveRun();
+    const r = G.run;
+    const modeLabel = r.mode === 'nightmare' ? 'NIGHTMARE' : 'ENDLESS';
+    const bestKey = r.mode === 'nightmare' ? 'bestNightmareLevel' : 'bestEndlessLevel';
+    document.getElementById('mapActName').textContent = `${modeLabel} — Depth ${r.floor + 1}`;
+    document.getElementById('mapBlurb').textContent =
+      `The road forks wider the deeper you march. Personal best: depth ${Meta.data[bestKey]}.`;
+    this.refreshTopBar();
+
+    const cv = this.el.mapCv;
+    const cssW = cv.clientWidth || 900, cssH = cv.clientHeight || 520;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = Math.round(cssW * dpr); cv.height = Math.round(cssH * dpr);
+    const g = cv.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const bg = g.createLinearGradient(0, 0, 0, cssH);
+    bg.addColorStop(0, '#14161d'); bg.addColorStop(1, '#0b0c10');
+    g.fillStyle = bg; g.fillRect(0, 0, cssW, cssH);
+    const facPal = PAL[r.mode === 'nightmare' ? 'strain' : 'myriad'];
+    glowDot(g, facPal.glow + '14', cssW * 0.86, cssH * 0.12, 46);
+
+    const vert = cssH > cssW;
+    const loFl = Math.max(0, r.floor - ENDLESS.BACK_WINDOW);
+    const hiFl = r.floor + ENDLESS.LOOKAHEAD;                 // last fully-shown floor
+    const lastFl = Math.min(hiFl + 1, r.map.length - 1);       // + one fog pip past the horizon
+    const slots = Math.max(1, lastFl - loFl);
+
+    this.mapNodes = [];
+    const choiceSet = Run.choices();
+    for (let fl = loFl; fl <= lastFl; fl++) {
+      const row = r.map[fl];
+      const along = (fl - loFl) / slots;
+      const fogged = fl > hiFl;
+      for (let i = 0; i < row.length; i++) {
+        const off = i - (row.length - 1) / 2;
+        const wob = Math.sin(fl * 3.7 + i * 5.1) * 16;
+        const x = vert ? cssW / 2 + off * Math.min(120, cssW * 0.3) + wob
+                       : 80 + (cssW - 180) * along;
+        const y = vert ? (cssH - 100) - (cssH - 200) * along
+                       : cssH / 2 + off * Math.min(140, cssH * 0.28) + wob;
+        this.mapNodes.push({ x, y, node: row[i], fogged, clickable: !fogged && choiceSet.includes(row[i]) });
+      }
+    }
+    // edges — the far edge into the fog pip is drawn fainter, nothing past it exists yet
+    const ex = vert ? 0 : 22, ey = vert ? -22 : 0;
+    g.lineWidth = 1.5; g.setLineDash([3, 6]);
+    for (let fl = loFl; fl < lastFl; fl++) {
+      const cur = this.mapNodes.filter(m => m.node.fl === fl);
+      const nxt = this.mapNodes.filter(m => m.node.fl === fl + 1);
+      g.strokeStyle = (fl + 1 > hiFl) ? '#24272e' : '#3a3f4d';
+      for (const a of cur) for (const bn of nxt) {
+        const proj = cur.length === 1 ? (nxt.length - 1) / 2 : a.node.i * (nxt.length - 1) / (cur.length - 1);
+        if (Math.abs(bn.node.i - proj) <= 1) {
+          g.beginPath(); g.moveTo(a.x + ex, a.y + ey); g.lineTo(bn.x - ex, bn.y - ey); g.stroke();
+        }
+      }
+    }
+    g.setLineDash([]);
+
+    const COLORS = {
+      battle: '#9aa8bc', elite: '#c86a3a', boss: facPal.glow, event: '#8fd8e8',
+      shop: '#b8a8e0', rest: '#8ce6a0', treasure: '#ffd27a',
+    };
+    for (const m of this.mapNodes) {
+      const R = m.node.type === 'boss' ? 28 : 20;
+      if (m.fogged) {
+        g.fillStyle = '#181b22'; g.strokeStyle = '#2c303c'; g.lineWidth = 1.5;
+        g.beginPath(); g.arc(m.x, m.y, R * 0.7, 0, 7); g.fill(); g.stroke();
+        g.fillStyle = '#454a58'; g.font = `bold ${Math.round(R * 0.9)}px Georgia, serif`;
+        g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText('?', m.x, m.y + R * 0.05);
+        continue;
+      }
+      const done = m.node.done, cur = m.node.fl === r.floor && m.node.i === r.pos;
+      const col = COLORS[m.node.type];
       if (m.clickable) glowDot(g, col + '55', m.x, m.y, R * 0.85);
       g.fillStyle = done ? '#1a1d25' : '#252a38';
       g.strokeStyle = m.clickable ? col : done ? '#31374a' : '#4a5164';
@@ -828,8 +1006,10 @@ const UI = {
     if (hqEl) hqEl.textContent = (FACTIONS[G.run.fac] || FACTIONS.vanguard).hqName.toUpperCase();
     this.syncStance(b);
     Render.prepare(b);
+    const zoneLabel = G.run.mode === 'campaign' ? ACTS[G.run.act].name.split('—')[1].trim()
+      : `${G.run.mode === 'nightmare' ? 'Nightmare' : 'Endless'} — Depth ${G.run.floor + 1}`;
     document.getElementById('encName').textContent =
-      (b.enc.boss ? '♛ ' : b.enc.elite ? '☠ ' : '') + coreName(b.fac) + ' — ' + ACTS[G.run.act].name.split('—')[1].trim();
+      (b.enc.boss ? '♛ ' : b.enc.elite ? '☠ ' : '') + coreName(b.fac) + ' — ' + zoneLabel;
     G.speed = 1; this.syncSpeed();
     document.getElementById('phaseBanner').textContent = 'DEPLOYMENT — place your squads, then sound the advance';
     document.getElementById('btnFight').classList.remove('hidden');
@@ -1187,12 +1367,32 @@ const UI = {
   showGameOver(b, lostNames) {
     this.clearSave();
     const r = G.run;
+    if (r.mode !== 'campaign') { this.showEndlessGameOver(r, lostNames); return; }
     const p = this.overlay(`
       <h2 class="loss">THE COLUMN IS BROKEN</h2>
       <p class="evText">The line failed in ${ACTS[r.act].name.split('—')[1].trim()}.<br>
       ${r.act === 0 ? 'The flood rolls west, unopposed.' : r.act === 1 ? 'The Choir adds your names to the dirge.' : 'The Altar drinks well tonight.'}</p>
       ${lostNames && lostNames.length ? `<p class="dim small">Fallen squads: ${lostNames.join(', ')}</p>` : ''}
       <p class="dim">Acts cleared: ${r.act} · Squads mustered: ${r.roster.length}</p>
+      <div id="unlockList"></div>
+      <button id="goTitle">Return to the muster</button>
+    `);
+    this.fillUnlocks(p.querySelector('#unlockList'));
+    p.querySelector('#goTitle').onclick = () => this.showTitle();
+  },
+
+  showEndlessGameOver(r, lostNames) {
+    const nightmare = r.mode === 'nightmare';
+    const depth = r.floor + 1;
+    const bestKey = nightmare ? 'bestNightmareLevel' : 'bestEndlessLevel';
+    const isBest = depth >= Meta.data[bestKey];
+    const p = this.overlay(`
+      <h2 class="loss">THE COLUMN IS BROKEN</h2>
+      <p class="evText">${nightmare ? 'The Strain adapts to everything the column had left.' : 'The road doesn\'t end. The column just stopped walking it.'}<br>
+      Depth reached: <b class="gold">${depth}</b>${isBest ? ' — a new personal best.' : ` (personal best: ${Meta.data[bestKey]})`}</p>
+      ${r.nightmareUnlockedThisRun ? `<p class="gold">NIGHTMARE UNLOCKED — the Virulent Strain has noticed the column.</p>` : ''}
+      ${lostNames && lostNames.length ? `<p class="dim small">Fallen squads: ${lostNames.join(', ')}</p>` : ''}
+      <p class="dim">Squads mustered: ${r.roster.length}</p>
       <div id="unlockList"></div>
       <button id="goTitle">Return to the muster</button>
     `);

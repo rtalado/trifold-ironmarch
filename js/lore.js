@@ -70,6 +70,13 @@ const LORE = {
         'The Avatar of the Pact waits at the Altar itself, wearing the debt like a crown. The Vanguard\'s cartographers marked the Bloodfields "end of the road." They meant it both ways.',
       ],
     },
+    strain: {
+      kicker: 'BEYOND THE MAPPED WAR',
+      text: [
+        'Nobody in the column can say where they first heard the word. It isn\'t in any dispatch log, and Command\'s cartographers won\'t put it on a map with an Obelisk on it — because whatever this is, it isn\'t near one. It doesn\'t sing, doesn\'t tithe, doesn\'t grow the way the other three grow. It just keeps testing what already worked on it, and keeping the part that hurt.',
+        'The scouts who came back call it the Virulent Strain, mostly because nobody offered a better name before it ate the first one. It has no banner, no doctrine, and — as far as anyone has lived long enough to report — no leadership to kill. Only an appetite, a memory for pain, and, as of the last transmission, no bottom anyone has found.',
+      ],
+    },
   },
 
   // -------------------------------------------------------------------------

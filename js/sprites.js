@@ -11,6 +11,7 @@ const PAL = {
   myriad:   { base:'#170f22', mid:'#3a1a52', hi:'#8f3fd1', rim:'#e9d9ff', glow:'#c24bff', accent:'#4a2a63', dark:'#0a0614' },
   choir:    { base:'#262630', mid:'#3f3f52', hi:'#9191b0', rim:'#eeeeff', glow:'#8fd8e8', accent:'#cfc8b0', dark:'#14141c' },
   pact:     { base:'#2a181b', mid:'#48232a', hi:'#a34440', rim:'#ffb09a', glow:'#ff4a34', accent:'#d8c4a8', dark:'#180c0f' },
+  strain:   { base:'#2a3510', mid:'#4a5a1a', hi:'#a8c93a', rim:'#eaffb0', glow:'#c8e639', accent:'#8a3624', dark:'#161d09' },
 };
 
 function mkCanvas(w, h) {
@@ -551,6 +552,162 @@ function tdStructure(g, p, o) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// THE VIRULENT STRAIN — soft wobbling flesh, no chitin plates, no rigid legs,
+// no radiating fused-flesh arms. A different organic vocabulary from both
+// Myriad (tdBeast) and Pact (tdFleshHulk): overlapping lobes, cilia stubs,
+// raised spore-stalks, and rust-red tithe-scar veins.
+// ---------------------------------------------------------------------------
+function tdBlob(g, p, o) {
+  // o: {r, cilia, pustules, maw, eyes}
+  const r = o.r;
+  if (o.cilia) {
+    // a trailing fan of short wavy stubs along the back/underside — never
+    // through the face, and started past the body edge so they stay visible
+    g.strokeStyle = p.base; g.lineWidth = r * 0.12; g.lineCap = 'round';
+    for (let i = 0; i < o.cilia; i++) {
+      const a = 2.0 + (o.cilia === 1 ? 1.1 : (i / (o.cilia - 1)) * 2.2);
+      const ex = Math.cos(a), ey = Math.sin(a);
+      g.beginPath(); g.moveTo(ex * r * 0.6, ey * r * 0.5);
+      g.quadraticCurveTo(ex * r * 1.0, ey * r * 0.85, ex * r * 0.85, ey * r * 1.25);
+      g.stroke();
+    }
+  }
+  softShape(g, lgrad(g, -r, -r, r, r, p.mid, p.base), 0, gg => {
+    gg.moveTo(r * 0.85, -r * 0.1);
+    gg.quadraticCurveTo(r * 0.55, -r * 0.68, -r * 0.1, -r * 0.62);
+    gg.quadraticCurveTo(-r * 0.75, -r * 0.5, -r * 0.7, -r * 0.05);
+    gg.quadraticCurveTo(-r * 0.85, r * 0.35, -r * 0.35, r * 0.6);
+    gg.quadraticCurveTo(r * 0.25, r * 0.78, r * 0.6, r * 0.4);
+    gg.quadraticCurveTo(r * 0.95, r * 0.2, r * 0.85, -r * 0.1);
+    gg.closePath();
+  });
+  // rust-red tithe scars — cracked veins across the hide
+  g.strokeStyle = p.accent + 'aa'; g.lineWidth = r * 0.045; g.lineCap = 'round';
+  for (let i = 0; i < 2; i++) {
+    const sx = -r * 0.3 + i * r * 0.5;
+    g.beginPath(); g.moveTo(sx, -r * 0.35);
+    g.lineTo(sx + r * 0.12, -r * 0.05); g.lineTo(sx - r * 0.05, r * 0.25); g.stroke();
+  }
+  if (o.pustules) {
+    for (let i = 0; i < o.pustules; i++) {
+      const a = i * 2.4, d = r * (0.3 + (i % 2) * 0.22);
+      blob(g, p.hi + '55', Math.cos(a) * d, Math.sin(a) * d * 0.7, r * 0.14, r * 0.12, 0);
+      glowDot(g, p.glow, Math.cos(a) * d, Math.sin(a) * d * 0.7, r * 0.05);
+    }
+  }
+  if (o.maw) {
+    softShape(g, p.dark, 0, gg => {
+      gg.moveTo(r * 0.85, -r * 0.05);
+      gg.lineTo(r * 0.45, -r * 0.26); gg.lineTo(r * 0.55, -r * 0.02);
+      gg.lineTo(r * 0.42, r * 0.2); gg.closePath();
+    });
+    for (let i = 0; i < 3; i++) blob(g, p.rim + 'cc', r * (0.5 + i * 0.1), -r * 0.14 + i * r * 0.12, r * 0.05, r * 0.05, 0);
+  }
+  const eyes = o.eyes || 1;
+  for (let i = 0; i < eyes; i++)
+    glowDot(g, p.glow, r * 0.35, (i - (eyes - 1) / 2) * r * 0.3, r * 0.09);
+  rimStroke(g, p.rim + 'aa', 2, gg => gg.arc(0, -r * 0.05, r * 0.62, -2.7, -0.5));
+}
+
+function tdSporeCaster(g, p, o) {
+  // o: {r, sac, tongue} — lurker's raised spore-sac, or lasher's lashing tongue
+  const r = o.r;
+  tdBlob(g, p, { r, cilia: 4, pustules: 2, eyes: 2 });
+  if (o.sac) {
+    g.strokeStyle = p.base; g.lineWidth = r * 0.16; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(r * 0.1, -r * 0.3); g.quadraticCurveTo(r * 0.45, -r * 0.75, r * 0.75, -r * 0.6); g.stroke();
+    blob(g, lgrad(g, r * 0.6, -r * 0.8, r * 0.9, -r * 0.4, p.hi, p.mid), r * 0.78, -r * 0.62, r * 0.24, r * 0.22, 0);
+    glowDot(g, p.glow, r * 0.78, -r * 0.62, r * 0.16);
+  }
+  if (o.tongue) {
+    g.strokeStyle = p.hi; g.lineWidth = r * 0.1; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(r * 0.5, -r * 0.05);
+    g.quadraticCurveTo(r * 1.1, -r * 0.35, r * 1.5, -r * 0.05);
+    g.quadraticCurveTo(r * 1.75, r * 0.12, r * 2.0, -r * 0.1); g.stroke();
+    glowDot(g, p.glow, r * 2.0, -r * 0.1, r * 0.08);
+  }
+}
+
+function tdDrifter(g, p, o) {
+  // fluttering membrane wings — thin, veined, scalloped; distinct from
+  // tdCultist's strapped leather and tdShroud's ragged zigzag shroud.
+  const r = o.r;
+  for (const s of [-1, 1]) {
+    const wingPath = gg => {
+      gg.moveTo(-r * 0.1, s * r * 0.15);
+      gg.quadraticCurveTo(-r * 0.5, s * r * 0.55, -r * 0.45, s * r * 0.85);
+      gg.quadraticCurveTo(-r * 0.75, s * r * 0.78, -r * 0.9, s * r * 1.05);
+      gg.quadraticCurveTo(-r * 1.05, s * r * 0.7, -r * 1.3, s * r * 0.75);
+      gg.quadraticCurveTo(-r * 1.0, s * r * 0.35, -r * 0.9, s * r * 0.15);
+      gg.quadraticCurveTo(-r * 0.5, s * r * 0.05, -r * 0.1, s * r * 0.15);
+      gg.closePath();
+    };
+    softShape(g, lgrad(g, -r * 0.1, 0, -r * 1.3, 0, p.mid, p.dark), 0, wingPath);
+    g.strokeStyle = p.hi + 'aa'; g.lineWidth = r * 0.03;
+    for (let i = 1; i <= 3; i++) {
+      g.beginPath(); g.moveTo(-r * 0.1, s * r * 0.15);
+      g.lineTo(-r * 0.3 - i * r * 0.28, s * r * (0.2 + i * 0.22)); g.stroke();
+    }
+    rimStroke(g, p.rim + '88', 1.4, wingPath);
+  }
+  tdBlob(g, p, { r: r * 0.85, cilia: 0, pustules: 1, eyes: 2 });
+}
+
+function tdMender(g, p, o) {
+  const r = o.r;
+  tdBlob(g, p, { r, cilia: 5, eyes: 2 });
+  g.strokeStyle = p.glow + '55'; g.lineWidth = 1;
+  g.beginPath(); g.arc(0, 0, r * 1.3, 0, 7); g.stroke();
+  // collector stalk reflavored as a mending tendril, an open glowing dish at its tip
+  g.strokeStyle = p.base; g.lineWidth = r * 0.14; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(-r * 0.1, -r * 0.3); g.quadraticCurveTo(-r * 0.3, -r * 0.75, -r * 0.05, -r * 0.95); g.stroke();
+  softShape(g, p.mid, 0, gg => gg.ellipse(-r * 0.05, -r * 0.98, r * 0.22, r * 0.12, 0, 0, 7));
+  glowDot(g, p.glow, -r * 0.05, -r * 0.98, r * 0.14);
+}
+
+function tdGenesisAbomination(g, p, o) {
+  // "A fused, city-block mountain of over-adapted biomass" — the Strain's
+  // apex: five overlapping lobes, a spiked ridge, writhing trailing tendrils.
+  const r = o.r;
+  g.strokeStyle = p.base; g.lineWidth = r * 0.09; g.lineCap = 'round';
+  for (let i = 0; i < 5; i++) {
+    const s = (i % 2) ? 1 : -1, off = (Math.floor(i / 2) + 1) * r * 0.22;
+    g.beginPath(); g.moveTo(-r * 0.5, s * off * 0.6);
+    g.quadraticCurveTo(-r * 1.1, s * off * 1.3, -r * 0.9, s * off * 1.9);
+    g.quadraticCurveTo(-r * 1.3, s * off * 2.1, -r * 1.5, s * off * 1.6);
+    g.stroke();
+  }
+  const lobes = [
+    [0, 0, 1.0], [-r * 0.35, -r * 0.3, 0.62], [r * 0.15, r * 0.4, 0.58],
+    [-r * 0.2, r * 0.42, 0.46], [r * 0.4, -r * 0.22, 0.5],
+  ];
+  for (const [lx, ly, scale] of lobes)
+    softShape(g, lgrad(g, lx - r, ly - r, lx + r, ly + r, p.mid, p.base), 0, gg =>
+      gg.ellipse(lx, ly, r * 0.66 * scale, r * 0.56 * scale, 0, 0, 7));
+  const spikes = [-0.5, -0.28, -0.02, 0.22, 0.5];
+  for (const sx of spikes) blob(g, p.dark, sx * r, -r * 0.5 + Math.abs(sx) * r * 0.1, r * 0.09, r * 0.16, 0.15);
+  for (let i = 0; i < 7; i++) {
+    const a = i * 1.9, d = r * (0.25 + (i % 3) * 0.16);
+    blob(g, p.hi + '66', Math.cos(a) * d, Math.sin(a) * d * 0.75, r * 0.09, r * 0.08, 0);
+    glowDot(g, p.glow, Math.cos(a) * d, Math.sin(a) * d * 0.75, r * 0.04);
+  }
+  softShape(g, p.dark, 0, gg => {
+    gg.moveTo(r * 0.98, -r * 0.02);
+    gg.lineTo(r * 0.5, -r * 0.32); gg.lineTo(r * 0.62, 0);
+    gg.lineTo(r * 0.5, r * 0.3); gg.closePath();
+  });
+  for (let i = 0; i < 4; i++) blob(g, p.rim, r * (0.55 + i * 0.1), -r * 0.2 + i * r * 0.135, r * 0.045, r * 0.07, 0);
+  g.strokeStyle = p.accent + 'bb'; g.lineWidth = r * 0.04; g.lineCap = 'round';
+  for (let i = 0; i < 3; i++) {
+    const sx = -r * 0.2 + i * r * 0.3;
+    g.beginPath(); g.moveTo(sx, -r * 0.4); g.lineTo(sx + r * 0.1, -r * 0.1); g.lineTo(sx - r * 0.05, r * 0.2); g.stroke();
+  }
+  for (let i = 0; i < 3; i++)
+    glowDot(g, p.glow, r * 0.15 + i * r * 0.08, -r * 0.28 + i * r * 0.22, r * 0.07);
+  rimStroke(g, p.rim + '99', 3, gg => gg.arc(0, 0, r * 0.85, -2.8, -0.6));
+}
+
 // ===========================================================================
 // RECIPES — unit id → top-down painter. r ≈ UNITS[id].w (world px).
 // ===========================================================================
@@ -696,6 +853,16 @@ const RECIPES = {
   abomination:{ r:19, f:(g,p)=>tdFleshHulk(g,p,{r:19}) },
   hemospire:  { r:14, f:(g,p)=>tdStructure(g,p,{r:14,kind:'spire'}) },
   avatar:     { r:28, f:(g,p)=>tdBloodTitan(g,p,{r:28}) },
+
+  // the virulent strain — nightmare only
+  spawnling:  { r:8,  f:(g,p)=>tdBlob(g,p,{r:8, cilia:3, maw:true}) },
+  biter:      { r:9,  f:(g,p)=>tdBlob(g,p,{r:9, cilia:4, pustules:1, maw:true, eyes:2}) },
+  stinger:    { r:9,  f:(g,p)=>tdSporeCaster(g,p,{r:9, sac:true}) },
+  lurker:     { r:10, f:(g,p)=>tdSporeCaster(g,p,{r:10, sac:true}) },
+  lasher:     { r:10, f:(g,p)=>tdSporeCaster(g,p,{r:10, tongue:true}) },
+  drifter:    { r:10, f:(g,p)=>tdDrifter(g,p,{r:10}) },
+  mender:     { r:10, f:(g,p)=>tdMender(g,p,{r:10}) },
+  genesisAbomination: { r:30, f:(g,p)=>tdGenesisAbomination(g,p,{r:30}) },
 };
 
 // ---------------------------------------------------------------------------
@@ -775,6 +942,33 @@ function paintCore(fac) {
     for (let i = 0; i < 4; i++) { g.beginPath();
       g.moveTo(-R * 0.6 + i * R * 0.28, -R * 0.34); g.lineTo(-R * 0.56 + i * R * 0.28, -R * 0.52); g.stroke(); }
     rimStroke(g, p.rim + 'cc', 3, gg => { gg.moveTo(-R * 0.66, -R * 0.2); gg.lineTo(R * 0.56, -R * 0.2); });
+  } else if (fac === 'strain') {
+    // the Progenitor: a pulsing fused-lobe mound, budding cysts at its rim
+    for (let i = 4; i > 0; i--)
+      blob(g, i % 2 ? p.mid : p.dark, 0, 0, R * 0.15 * i, R * 0.13 * i, 0.15, i === 4 ? 10 : 0);
+    softShape(g, lgrad(g, -R, -R, R, R, p.mid, p.base), 0, gg => {
+      gg.moveTo(R * 0.62, -R * 0.1);
+      gg.quadraticCurveTo(R * 0.4, -R * 0.6, -R * 0.05, -R * 0.58);
+      gg.quadraticCurveTo(-R * 0.55, -R * 0.5, -R * 0.6, -R * 0.05);
+      gg.quadraticCurveTo(-R * 0.66, R * 0.4, -R * 0.15, R * 0.55);
+      gg.quadraticCurveTo(R * 0.3, R * 0.68, R * 0.55, R * 0.3);
+      gg.quadraticCurveTo(R * 0.7, R * 0.1, R * 0.62, -R * 0.1);
+      gg.closePath();
+    });
+    for (let i = 0; i < 6; i++) {
+      const a = i * Math.PI / 3 + 0.3;
+      const cx = Math.cos(a) * R * 0.58, cy = Math.sin(a) * R * 0.5;
+      blob(g, p.dark, cx, cy, R * 0.14, R * 0.12, a);
+      blob(g, p.hi + '55', cx, cy, R * 0.08, R * 0.07, a);
+    }
+    g.strokeStyle = p.accent + 'aa'; g.lineWidth = 2;
+    for (let i = 0; i < 4; i++) {
+      const a = i * 1.7;
+      g.beginPath(); g.moveTo(0, 0);
+      g.quadraticCurveTo(Math.cos(a) * R * 0.3, Math.sin(a) * R * 0.3, Math.cos(a) * R * 0.55, Math.sin(a) * R * 0.5); g.stroke();
+    }
+    glowDot(g, p.glow, 0, 0, 10);
+    rimStroke(g, p.rim + 'aa', 3, gg => gg.arc(0, 0, R * 0.6, -2.8, -0.6));
   } else {
     // blood altar: monolith ring over a pool
     blob(g, p.glow + '30', 0, 0, R * 0.72, R * 0.66, 0, 8);
@@ -850,6 +1044,7 @@ const GROUNDS = {
   myriad: { base:'#170f20', lit:'#2b1a3a', dark:'#0c0714', prop:'#3a2454', glow:'#c24bff' },
   choir:  { base:'#1e1e28', lit:'#2c2c3a', dark:'#131319', prop:'#4a4a60', glow:'#8fd8e8' },
   pact:   { base:'#201316', lit:'#301b20', dark:'#130a0d', prop:'#582c34', glow:'#ff4a34' },
+  strain: { base:'#1a2008', lit:'#2c3512', dark:'#0e1305', prop:'#455417', glow:'#c8e639' },
 };
 
 function paintField(fac, seed, feats) {

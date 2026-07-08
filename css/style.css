@@ -275,6 +275,10 @@ button.armed { border-color: var(--blood); color: var(--blood); }
 .setRow button { padding: 5px 14px; font-size: 12px; min-width: 56px; }
 .setOpts { display: flex; gap: 6px; }
 .setRow button.on { border-color: var(--gold); color: var(--gold); }
+/* endless mode select */
+.modeRow { display: flex; gap: 10px; justify-content: center; }
+.modeRow button.on { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 12px #d8b45a22; }
+
 /* faction select */
 .brutalToggle {
   display: block; max-width: 520px; margin: 14px auto 0; text-align: left;

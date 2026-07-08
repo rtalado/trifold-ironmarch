@@ -4,20 +4,109 @@
 // ============================================================================
 'use strict';
 
+// Endless/Nightmare tuning — see Run.genEndlessMap / genEndlessEncounter.
+const ENDLESS = {
+  BATCH: 24,        // floors generated per batch
+  REFILL_AT: 10,     // regenerate another batch once this many floors remain ahead
+  LOOKAHEAD: 2,       // fog of war: nodes visible ahead of the player (ui.js)
+  BACK_WINDOW: 2,      // fog of war: recently-cleared nodes still shown (ui.js)
+  RESTGAP: 6,           // force a rest node if none has appeared in this many floors
+};
+
 const Run = {
   // ------------------------------------------------------------------
-  start(fac, brutal) {
+  start(fac, brutal, mode) {
     fac = FACTIONS[fac] ? fac : 'vanguard';
+    mode = (mode === 'endless' || mode === 'nightmare') ? mode : 'campaign';
     G.run = {
-      fac, brutal: !!brutal,
+      fac, brutal: !!brutal, mode,
       roster: FACTIONS[fac].start.map(id => ({ id, up: false })),
       relics: [], scrap: 45,
       act: 0, floor: -1, pos: 0,
       map: null, seen: [],
+      sinceRest: 0,
     };
-    this.genMap();
+    if (mode === 'campaign') this.genMap(); else this.genEndlessMap();
     G.screen = 'map';
     UI.showMap();
+  },
+
+  // ------------------------------------------------------------------
+  // ENDLESS / NIGHTMARE — one continuous, ever-widening, fogged map that
+  // mixes all three enemy factions node-by-node (or, in Nightmare, is the
+  // Virulent Strain exclusively). Generated in batches so the map is
+  // functionally infinite without pre-building hundreds of floors.
+  // ------------------------------------------------------------------
+  genEndlessMap() {
+    G.run.map = [];
+    G.run.sinceRest = 0;
+    this.growEndlessMap(ENDLESS.BATCH);
+    G.run.floor = -1;
+    G.run.pos = 0;
+  },
+
+  growEndlessMap(count) {
+    const r = G.run;
+    const map = r.map;
+    const facPool = r.mode === 'nightmare' ? ['strain'] : ['myriad', 'choir', 'pact'];
+    const start = map.length;
+    for (let fl = start; fl < start + count; fl++) {
+      const isBoss = (fl + 1) % 10 === 0;
+      const isElite = !isBoss && (fl + 1) % 5 === 0;
+      const lanes = Math.min(6, 3 + Math.floor(fl / 20));
+      const n = isBoss ? 1 : (fl === 0 ? 2 : lanes);
+      const row = [];
+      for (let i = 0; i < n; i++) {
+        let type;
+        if (isBoss) type = 'boss';
+        else if (isElite) type = 'elite';
+        else if (fl === 0) type = 'battle';
+        else {
+          const roll = Math.random();
+          if (roll < 0.52) type = 'battle';
+          else if (roll < 0.68) type = 'event';
+          else if (roll < 0.84) type = 'shop';
+          else if (roll < 0.94) type = 'rest';
+          else type = 'treasure';
+        }
+        const node = { type, fl, i, done: false };
+        if (type === 'battle' || type === 'elite' || type === 'boss') node.fac = pick(facPool);
+        row.push(node);
+      }
+      if (!isBoss && !isElite) {
+        if (row.some(nd => nd.type === 'rest')) r.sinceRest = 0;
+        else if (++r.sinceRest > ENDLESS.RESTGAP) { row[0].type = 'rest'; delete row[0].fac; r.sinceRest = 0; }
+      }
+      map.push(row);
+    }
+  },
+
+  // called on every endless/nightmare node entry — keeps floors ahead of the player
+  ensureEndlessFloors() {
+    const r = G.run;
+    if (r.map.length - r.floor <= ENDLESS.REFILL_AT) this.growEndlessMap(ENDLESS.BATCH);
+  },
+
+  // procedurally builds an ENCOUNTERS-shaped object for the given faction/depth/kind
+  genEndlessEncounter(fac, depth, kind) {
+    const base = { battle: 18, elite: 27, boss: 34 }[kind];
+    const budget = Math.round(base + depth * 2.0 + depth * depth * 0.018);
+    const waves = Math.round(budget * 0.42);
+    const coreHP = Math.min(3.2, 0.85 + depth * 0.01);
+    const tier = Math.min(4, Math.floor(depth / 12));
+    const heavyGate = depth >= 15;
+    const pool = Object.keys(UNITS).filter(id => UNITS[id].fac === fac && !UNITS[id].boss);
+    pool.sort((a, bId) => UNITS[a].pts - UNITS[bId].pts);
+    const lockedOut = heavyGate ? 0 : Math.min(2, pool.length - 1);
+    const comp = {};
+    pool.forEach((id, idx) => {
+      if (idx >= pool.length - lockedOut) return;    // heaviest units stay locked pre-depth15
+      comp[id] = Math.max(1, 12 - UNITS[id].pts);     // cheaper units weighted higher
+    });
+    const enc = { fac, tier, budget, waves, style: pick(['line', 'swarm', 'flank']), coreHP, comp };
+    if (kind === 'elite') enc.elite = true;
+    if (kind === 'boss') { enc.boss = BOSS_UNIT[fac]; enc.budget = Math.round(enc.budget * 0.7); }
+    return enc;
   },
 
   // ------------------------------------------------------------------
@@ -65,6 +154,14 @@ const Run = {
   enterNode(node) {
     const r = G.run;
     r.floor = node.fl; r.pos = node.i; node.done = true;
+    if (r.mode !== 'campaign') {
+      if (Meta.recordEndlessProgress(r.mode, r.floor + 1)) r.nightmareUnlockedThisRun = true;
+      this.ensureEndlessFloors();
+    }
+    if (r.mode !== 'campaign' && (node.type === 'battle' || node.type === 'elite' || node.type === 'boss')) {
+      startBattle(this.genEndlessEncounter(node.fac, node.fl, node.type));
+      return;
+    }
     const act = ACTS[r.act];
     switch (node.type) {
       case 'battle': startBattle(pick(act.normals)); break;
@@ -115,7 +212,7 @@ const Run = {
       });
       return;
     }
-    if (rw.isBoss) {
+    if (rw.isBoss && r.mode === 'campaign') {
       r.act++;
       if (r.act >= ACTS.length) {
         Meta.lastUnlocks = Meta.recordRunEnd(true);
