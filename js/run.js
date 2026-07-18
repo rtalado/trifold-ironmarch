@@ -291,6 +291,13 @@ const Run = {
     let res = choice.result;
     if (res.random) res = pick(res.random);
     const out = [];
+    // a column of one squad refuses to trade itself away — resolve before any
+    // reward lands, so the deal simply falls through instead of paying out
+    if (res.loseSquad === true && r.roster.length <= 1) {
+      if (choice.cost) r.scrap += choice.cost;
+      out.push('Your last squad refuses to go. The deal is off.');
+      return out;
+    }
     if (res.scrap) { r.scrap = Math.max(0, r.scrap + res.scrap); out.push(`${res.scrap > 0 ? '+' : ''}${res.scrap} scrap`); }
     if (res.relic) { const rl = this.randomRelic(); if (rl) { r.relics.push(rl); out.push(`Gained: ${RELICS[rl].name}`); } }
     if (res.squad) {
@@ -304,6 +311,14 @@ const Run = {
       const up = !!res.upgraded || hooks.recruitUp;
       r.roster.push({ id, up });
       out.push(`Recruited: ${UNITS[id].name}${up ? ' ★' : ''}`);
+    }
+    if (res.upgrade) {
+      const cands = r.roster.map((_, i) => i).filter(i => !r.roster[i].up);
+      if (cands.length) {
+        const i = pick(cands);
+        r.roster[i].up = true;
+        out.push(`Drilled: ${squadName(r.roster[i])}`);
+      }
     }
     if (res.loseSquad === 'random') {
       if (r.roster.length > 1) {

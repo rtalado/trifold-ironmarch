@@ -242,6 +242,8 @@ const RELICS = {
   r_longbarrels:{ name:'Long Barrels',       desc:'Your units have +10% range.',                 hooks:{rngMult:1.1} },
   r_deepReserve:{ name:'Deep Reserves',      desc:'+2 reserve drops per battle.',                hooks:{reserveAdd:2} },
   r_fieldMed:   { name:'Field Medicine',     desc:'All healing your units receive is 50% stronger.', hooks:{healMult:1.5} },
+  r_scouts:     { name:'Forward Scouts',     desc:'Enemy reinforcement waves arrive 12s later.', hooks:{waveDelay:12} },
+  r_ledger:     { name:'Quartermaster\'s Ledger', desc:'Victories yield 25% more scrap.',        hooks:{scrapMult:1.25} },
 };
 
 // ---------------------------------------------------------------------------
@@ -269,6 +271,8 @@ const MAP_TEMPLATES = [
   { id:'plateau',   feats:[ {t:'ridge',x:0.38,y:0.32,r:95}, {t:'ridge',x:0.62,y:0.68,r:95}, {t:'rocks',x:0.5,y:0.5,r:60} ] },
   { id:'overgrown', feats:[ {t:'hostile',x:0.45,y:0.28,r:120}, {t:'hostile',x:0.62,y:0.74,r:120}, {t:'ruins',x:0.3,y:0.6,r:80} ] },
   { id:'scarline',  feats:[ {t:'rocks',x:0.4,y:0.5,r:85}, {t:'rocks',x:0.68,y:0.24,r:75}, {t:'ridge',x:0.72,y:0.62,r:90}, {t:'ruins',x:0.24,y:0.26,r:75} ] },
+  { id:'causeway',  feats:[ {t:'rocks',x:0.5,y:0.2,r:95}, {t:'rocks',x:0.5,y:0.8,r:95}, {t:'ridge',x:0.5,y:0.5,r:80}, {t:'ruins',x:0.72,y:0.5,r:85} ] },
+  { id:'basin',     feats:[ {t:'ruins',x:0.5,y:0.5,r:110}, {t:'ridge',x:0.3,y:0.2,r:80}, {t:'ridge',x:0.7,y:0.8,r:80}, {t:'hostile',x:0.85,y:0.2,r:90} ] },
 ];
 
 // ---------------------------------------------------------------------------
@@ -401,6 +405,19 @@ const EVENTS = [
       { label:'Buy her survey (25 scrap)', cost:25, result:{relic:true}, note:'Gain a random requisition' },
       { label:'Take the shortcut she marks', result:{random:[{scrap:45},{nothing:true}]}, note:'50%: +45 scrap in saved supplies. 50%: the shortcut is gone' },
       { label:'Trade road gossip and part ways', result:{nothing:true}, note:'Nothing happens' },
+    ]},
+  { id:'tollbridge', title:'The Toll Bridge',
+    text:'The only bridge for forty miles, and someone has bolted a gate to it. Freelancers — half a company, dug in well, polite the way people with a chokepoint can afford to be. The river below runs fast, cold, and indifferent to schedules.',
+    choices:[
+      { label:'Pay the toll', cost:25, result:{safe:true}, note:'-25 scrap, the gate opens' },
+      { label:'Storm the gate', result:{random:[{scrap:45},{loseSquad:'random'}]}, note:'50%: +45 scrap from their coffers. 50%: the crossing takes a squad' },
+      { label:'Ford the river downstream', result:{random:[{nothing:true},{scrap:-20}]}, note:'50%: across, cold but whole. 50%: -20 scrap in ruined kit' },
+    ]},
+  { id:'drillmaster', title:'The Last Sergeant',
+    text:'She was drilling recruits at the border forts before the Trifold cracked, and she is drilling them still — alone, on a parade ground of weeds, calling cadence to ranks that stopped answering years ago. She looks your column over like it arrived late. She could make soldiers of them yet. For a price.',
+    choices:[
+      { label:'Hire her for a day (30 scrap)', cost:30, result:{upgrade:true}, note:'A random squad gets drilled ★' },
+      { label:'Leave her to her parade', result:{nothing:true}, note:'Nothing happens' },
     ]},
   { id:'drums', title:'Drums in the Hills',
     text:'All night, drums from the ridgeline — not Swarm, not Choir, not anything the scouts can name. Deserters from a dozen armies live up there now. Some of them remember being soldiers.',

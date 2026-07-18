@@ -147,9 +147,9 @@ function finishBattle(b) {
       if (e.dead || e.side !== 'player' || !e.struct) continue;
       rent += (b.fpk.structRent || 0) + (UNITS[e.unitId] && UNITS[e.unitId].rent || 0);
     }
-    const scrap = ECON.scrapWinBase + b.enc.tier * 9 + (b.enc.elite ? 18 : 0) + (b.enc.boss ? 35 : 0)
+    const scrap = Math.round((ECON.scrapWinBase + b.enc.tier * 9 + (b.enc.elite ? 18 : 0) + (b.enc.boss ? 35 : 0)
                 + Math.floor(rand(0, 8)) + b.hooks.scrapAdd
-                + Math.round(b.bounty || 0) + severance + rent;
+                + Math.round(b.bounty || 0) + severance + rent) * b.hooks.scrapMult);
     run.scrap += scrap;
     Run.afterVictory(b, scrap, lostNames);
   } else {

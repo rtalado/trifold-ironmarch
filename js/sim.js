@@ -34,7 +34,7 @@ function newBattle(encId, run) {
     lastStandUsed: false,
     stance: 'advance',               // standing order: 'advance' | 'hold' | 'fallback' — applies to every
                                       // squad on the field live, and to the next one placed/dropped
-    nextWave: 35,
+    nextWave: 35 + hooks.waveDelay,
     reserveLeft: ECON.reserveDrops + hooks.reserveAdd,
     reserveCdT: 0,
     ability, abilityArmed: false,
@@ -295,7 +295,6 @@ function killEnt(b, e, source) {
   if (e.squad) {
     e.squad.alive--;
     if (e.squad.alive <= 0 && e.squad.rosterIdx != null) b.wiped.push(e.squad.rosterIdx);
-    if (e.squad.boss || (b.enc.elite && e.boss)) { /* noop */ }
   }
   if (e.side === 'enemy' && (e.boss || e.w >= 18) && b.hooks.eliteBounty) {
     b.run.scrap += b.hooks.eliteBounty;
@@ -308,8 +307,7 @@ function killEnt(b, e, source) {
   }
   if (e.deathSpawn) {
     for (let i = 0; i < e.deathSpawn.n; i++)
-      makeModel(b, e.side, e.deathSpawn.unit, e.x + rand(-14, 14), e.y + rand(-14, 14), null,
-        e.squad && e.squad.side === e.side ? null : null);
+      makeModel(b, e.side, e.deathSpawn.unit, e.x + rand(-14, 14), e.y + rand(-14, 14), null, null);
   }
   if (e.deathBurst) {
     b.fx.push({ kind: 'burst', x: e.x, y: e.y, r: e.deathBurst.rng, fac: e.fac, ttl: 0.5 });
@@ -385,11 +383,19 @@ function simTick(b, dt) {
 
   // reinforcement waves (max 3 — a stalled battle must stay winnable)
   if (b.t >= b.nextWave && (b.waveCount || 0) < 3) {
-    b.nextWave += 35;
+    b.nextWave += 35 + b.hooks.waveDelay;
     b.waveCount = (b.waveCount || 0) + 1;
     placeEnemyForce(b, b.enc.waves, false);
     b.fx.push({ kind: 'waveWarn', ttl: 2.2 });
   }
+
+  // fallback rally line: just behind the most forward surviving emplacement,
+  // or a line just east of the HQ if none stands
+  let rallyX = b.hq.x + 110;
+  for (const o of b.ents) {
+    if (!o.dead && o.side === 'player' && o.struct && o.x - 30 > rallyX) rallyX = o.x - 30;
+  }
+  rallyX = clamp(rallyX, 30, ARENA.deployW - 30);
 
   for (const e of b.ents) {
     if (e.dead || e.core) continue;
@@ -487,10 +493,9 @@ function simTick(b, dt) {
         // Hold stance: stand your ground — only fall back if something got inside min range.
         gx = e.x; gy = e.y;
       } else if (e.side === 'player' && e.squad && e.squad.stance === 'fallback' && !tooClose) {
-        // Fallback stance: retreat to a rally line behind the HQ (and behind any forward
-        // emplacements) and hold there, regrouping instead of chasing the fight.
-        const rx = clamp(b.hq.x + 110, 30, ARENA.deployW - 30);
-        gx = Math.abs(e.x - rx) < 26 ? e.x : rx;
+        // Fallback stance: retreat to the rally line (just behind the HQ or the most
+        // forward emplacement) and hold there, regrouping instead of chasing the fight.
+        gx = Math.abs(e.x - rallyX) < 26 ? e.x : rallyX;
         gy = e.y;
       }
       if (tooClose) back = true;

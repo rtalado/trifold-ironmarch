@@ -183,7 +183,8 @@ const UI = {
     on('stnFallback', () => this.setStance('fallback'));
     on('btnAbility', () => this.toggleAbility());
     for (const s of [0, 1, 2, 3]) {
-      document.getElementById('spd' + s).onclick = () => { G.speed = s === 0 ? 0 : s; this.syncSpeed(); };
+      const el = document.getElementById('spd' + s);
+      if (el) el.onclick = () => { G.speed = s === 0 ? 0 : s; this.syncSpeed(); };
     }
   },
 
@@ -1018,7 +1019,16 @@ const UI = {
     document.getElementById('encName').textContent =
       (b.enc.boss ? '♛ ' : b.enc.elite ? '☠ ' : '') + coreName(b.fac) + ' — ' + zoneLabel;
     G.speed = 1; this.syncSpeed();
-    document.getElementById('phaseBanner').textContent = 'DEPLOYMENT — place your squads, then sound the advance';
+    // enemy intel: the initial force is visible on the field — summarize it too
+    const counts = {};
+    for (const s of b.squads) if (s.side === 'enemy') counts[s.unitId] = (counts[s.unitId] || 0) + 1;
+    const intel = Object.entries(counts)
+      .sort((a, z) => UNITS[z[0]].pts - UNITS[a[0]].pts)
+      .map(([id, n]) => (n > 1 ? `${n}× ` : '') + UNITS[id].name)
+      .join(' · ');
+    document.getElementById('phaseBanner').innerHTML =
+      'DEPLOYMENT — place your squads, then sound the advance'
+      + (intel ? `<span class="enemyIntel">Enemy muster: ${intel}</span>` : '');
     document.getElementById('btnFight').classList.remove('hidden');
     document.getElementById('speedBox').classList.add('hidden');
     document.getElementById('reserveBox').classList.add('hidden');
@@ -1039,7 +1049,10 @@ const UI = {
   },
 
   syncSpeed() {
-    for (const s of [0, 1, 2, 3]) document.getElementById('spd' + s).classList.toggle('on', (s === 0 ? 0 : s) === G.speed);
+    for (const s of [0, 1, 2, 3]) {
+      const el = document.getElementById('spd' + s);
+      if (el) el.classList.toggle('on', (s === 0 ? 0 : s) === G.speed);
+    }
   },
 
   // ---------------- stance: advance / hold / fallback ----------------
@@ -1326,18 +1339,22 @@ const UI = {
       const btn = document.createElement('button');
       btn.innerHTML = `${ch.label} <span class="dim">— ${ch.note}</span>${ch.cost ? ` <span class="gold">(⚙ ${ch.cost})</span>` : ''}`;
       if (ch.cost && G.run.scrap < ch.cost) btn.disabled = true;
+      // choices that can't apply: trading away a squad needs a column of 2+,
+      // a drill offer needs an undrilled squad to drill
+      if (ch.result.loseSquad === true && G.run.roster.length < 2) btn.disabled = true;
+      if (ch.result.upgrade && !G.run.roster.some(en => !en.up)) btn.disabled = true;
       btn.onclick = () => {
         const out = Run.resolveEventChoice(ev, ch);
         if (out === false) return;
         if (out.includes('__LOSE__')) {
+          // the deal is struck — the pick is mandatory, no backing out with the payment
           this.showRoster(G.run.roster, {
-            title: 'Trade away which squad?', pick: true,
+            title: 'Trade away which squad?', pick: true, required: true,
             onPick: i => {
               const name = squadName(G.run.roster[i]);
               Run.removeSquadAt(i);
               this.eventOutcome(out.filter(x => x !== '__LOSE__').concat(`Lost: ${name}`));
             },
-            onCancel: () => this.eventOutcome(out.filter(x => x !== '__LOSE__')),
           });
         } else this.eventOutcome(out);
       };
@@ -1359,7 +1376,7 @@ const UI = {
     const p = this.overlay(`
       <h2>${opts.title || 'The Column'} <span class="dim">(${roster.length} squads)</span></h2>
       <div class="cardRow wrap" id="rsCards"></div>
-      <button id="rsBack" class="ghostBtn">${opts.pick ? 'Cancel' : 'Back'}</button>
+      ${opts.required ? '' : `<button id="rsBack" class="ghostBtn">${opts.pick ? 'Cancel' : 'Back'}</button>`}
     `);
     const row = p.querySelector('#rsCards');
     roster.forEach((entry, i) => {
@@ -1371,7 +1388,8 @@ const UI = {
       if (opts.pick) el.classList.add('pickable');
       row.appendChild(el);
     });
-    p.querySelector('#rsBack').onclick = () => {
+    const back = p.querySelector('#rsBack');
+    if (back) back.onclick = () => {
       if (opts.onCancel) opts.onCancel();
       else { G.screen = 'map'; this.showMap(); }
     };

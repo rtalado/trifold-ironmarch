@@ -162,7 +162,13 @@ button:disabled { opacity: 0.4; cursor: default; }
   position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
   color: #d8b45acc; font-size: 14px; letter-spacing: 0.16em; pointer-events: none;
   text-shadow: 0 1px 4px #000;
+  max-width: 88%; text-align: center;
 }
+#phaseBanner .enemyIntel {
+  display: block; margin-top: 4px;
+  font-size: 11px; letter-spacing: 0.06em; color: #c88a6acc;
+}
+.wounded { color: #e8a34a; }
 #hintBanner {
   position: absolute; top: 44px; left: 50%; transform: translateX(-50%);
   background: #0e1015dd; border: 1px solid var(--blood); color: #e8a49a;
